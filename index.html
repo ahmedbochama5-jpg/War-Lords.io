@@ -19,48 +19,26 @@
             height: 100vh;
         }
         
-        #animatedBackground {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(41, 128, 185, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(231, 76, 60, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(46, 204, 113, 0.05) 0%, transparent 50%);
-            animation: backgroundPulse 8s ease-in-out infinite;
-        }
-        
-        @keyframes backgroundPulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
         #gameContainer {
             position: relative;
             width: 100vw;
             height: 100vh;
         }
         
+        #worldMap, #battleScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
         #worldMap {
             background: linear-gradient(135deg, #2c3e50, #34495e);
-            display: none;
-            cursor: pointer;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            display: block;
         }
         
         #battleScreen {
             background: rgba(26, 60, 45, 0.95);
             display: none;
-            cursor: crosshair;
-        }
-        
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
         }
         
         #startScreen {
@@ -77,17 +55,6 @@
             z-index: 1000;
         }
         
-        .titleContainer {
-            text-align: center;
-            margin-bottom: 50px;
-            animation: titleGlow 3s ease-in-out infinite;
-        }
-        
-        @keyframes titleGlow {
-            0%, 100% { transform: scale(1); text-shadow: 0 0 20px rgba(231, 76, 60, 0.5); }
-            50% { transform: scale(1.02); text-shadow: 0 0 30px rgba(231, 76, 60, 0.8); }
-        }
-        
         .mainTitle {
             font-size: 4em;
             font-weight: bold;
@@ -96,13 +63,6 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        
-        .subTitle {
-            font-size: 1.5em;
-            color: #3498db;
-            margin-bottom: 30px;
         }
         
         .startButton {
@@ -113,18 +73,7 @@
             font-size: 1.5em;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
-            position: relative;
-            overflow: hidden;
-            font-weight: bold;
             margin: 10px;
-        }
-        
-        .startButton:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(231, 76, 60, 0.5);
-            background: linear-gradient(45deg, #c0392b, #e74c3c);
         }
         
         #uiOverlay {
@@ -134,43 +83,45 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            display: none;
         }
         
-        #mapPanel {
+        #mapPanel, #resourcesPanel, #battlePanel {
             position: absolute;
-            top: 20px;
-            left: 20px;
             background: rgba(0, 0, 0, 0.8);
             padding: 15px;
             border-radius: 15px;
-            border: 2px solid #3498db;
-            pointer-events: auto;
             backdrop-filter: blur(10px);
+            pointer-events: auto;
+        }
+        
+        #mapPanel {
+            top: 20px;
+            left: 20px;
+            border: 2px solid #3498db;
             min-width: 300px;
         }
         
         #resourcesPanel {
-            position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 15px;
             border: 2px solid #2ecc71;
-            backdrop-filter: blur(10px);
         }
         
         #battlePanel {
-            position: absolute;
             bottom: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 15px;
             border: 2px solid #e74c3c;
-            pointer-events: auto;
-            backdrop-filter: blur(10px);
+            display: none;
+        }
+        
+        button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            cursor: pointer;
         }
         
         .region-info {
@@ -178,824 +129,375 @@
             padding: 10px;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .region-info.enemy {
-            border-left-color: #e74c3c;
-        }
-        
-        .region-info.neutral {
-            border-left-color: #f1c40f;
-        }
-        
-        .resource {
-            margin: 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.1em;
-        }
-        
-        .resource-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-        
-        .gold { background: linear-gradient(45deg, #f1c40f, #f39c12); }
-        .oil { background: linear-gradient(45deg, #2c3e50, #34495e); }
-        .electricity { background: linear-gradient(45deg, #3498db, #2980b9); }
-        .wood { background: linear-gradient(45deg, #8B4513, #A0522D); }
-        .stone { background: linear-gradient(45deg, #7f8c8d, #95a5a6); }
-        
-        button {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            color: white;
-            border: none;
-            padding: 12px 18px;
-            margin: 6px;
-            border-radius: 8px;
-            cursor: pointer;
-            pointer-events: auto;
-            transition: all 0.3s ease;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 0.9em;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-        }
-        
-        button:disabled {
-            background: #7f8c8d;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .map-btn {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-        }
-        
-        .map-btn:hover:not(:disabled) {
-            background: linear-gradient(45deg, #2980b9, #3498db);
-        }
-        
-        .battle-btn {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-        }
-        
-        .battle-btn:hover:not(:disabled) {
-            background: linear-gradient(45deg, #c0392b, #e74c3c);
-        }
-        
-        .region-btn {
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
-        }
-        
-        .region-btn:hover:not(:disabled) {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-        }
-        
-        #performancePanel {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            border: 1px solid #3498db;
-            backdrop-filter: blur(5px);
-        }
-        
-        .message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            border: 2px solid #e74c3c;
-            z-index: 2000;
-            text-align: center;
-            animation: fadeInOut 2s ease-in-out;
-        }
-        
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0; transform: translate(-50%, -60%); }
-            20%, 80% { opacity: 1; transform: translate(-50%, -50%); }
-        }
-        
-        .controlsInfo {
-            background: rgba(52, 152, 219, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            margin-top: 30px;
-            border: 1px solid rgba(52, 152, 219, 0.3);
-            text-align: center;
-            max-width: 600px;
-        }
-        
-        .controlsInfo h3 {
-            color: #3498db;
-            margin-bottom: 15px;
-        }
-        
-        .key {
-            display: inline-block;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            margin: 5px;
-            border-radius: 5px;
-            border: 1px solid #3498db;
-            font-family: monospace;
-        }
-        
-        .region-tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #3498db;
-            pointer-events: none;
-            z-index: 1000;
-            font-size: 12px;
-            max-width: 200px;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
-            margin-top: 5px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
-            border-radius: 3px;
-            transition: width 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div id="animatedBackground"></div>
-    
     <div id="gameContainer">
         <div id="startScreen">
-            <div class="titleContainer">
-                <div class="mainTitle">WAR LORDS</div>
-                <div class="subTitle">إمبراطورية العالم - سيطِر على الخريطة!</div>
-            </div>
-            
-            <button class="startButton" onclick="startGame()">
-                🗺️ ابدأ الحملة
-            </button>
-            
-            <div class="controlsInfo">
-                <h3>🎮 نظام العالم الجديد</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: right;">
-                    <div>
-                        <div>🗺️ خريطة عالمية</div>
-                        <div>🏰 مناطق مختلفة</div>
-                        <div>💎 موارد متنوعة</div>
-                        <div>⚔️ معارك استراتيجية</div>
-                    </div>
-                    <div>
-                        <div>🌲 خشب للبناء</div>
-                        <div>🪨 حجر للتحصينات</div>
-                        <div>🛢️ نفط للدبابات</div>
-                        <div>⚡ كهرباء للطائرات</div>
-                    </div>
-                </div>
-            </div>
+            <div class="mainTitle">WAR LORDS</div>
+            <button class="startButton" onclick="startGame()">🚀 ابدأ اللعبة</button>
         </div>
         
         <canvas id="worldMap"></canvas>
         <canvas id="battleScreen"></canvas>
         
         <div id="uiOverlay">
-            <!-- لوحة الخريطة -->
             <div id="mapPanel">
                 <h3>🗺️ إمبراطوريتك</h3>
-                <div class="region-info">
-                    <strong>🏰 العاصمة</strong>
-                    <div>المستوى: <span id="capitalLevel">1</span></div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="capitalProgress" style="width: 100%"></div>
-                    </div>
-                </div>
-                
-                <div id="regionsList">
-                    <!-- المناطق ستضاف هنا ديناميكياً -->
-                </div>
-                
-                <button class="map-btn" onclick="game.upgradeCapital()" id="upgradeBtn">
-                    ⬆️ تطوير العاصمة (500 ذهب)
-                </button>
-                <button class="region-btn" onclick="game.returnToMap()" id="returnBtn">
-                    🗺️ العودة للخريطة
-                </button>
+                <div id="regionsList"></div>
+                <button onclick="game.returnToMap()">🗺️ العودة للخريطة</button>
             </div>
             
-            <!-- لوحة الموارد -->
             <div id="resourcesPanel">
-                <h3>💰 موارد الإمبراطورية</h3>
-                <div class="resource">
-                    <div class="resource-icon gold"></div>
-                    <span>الذهب: <span id="goldValue">2000</span></span>
-                </div>
-                <div class="resource">
-                    <div class="resource-icon oil"></div>
-                    <span>النفط: <span id="oilValue">1000</span></span>
-                </div>
-                <div class="resource">
-                    <div class="resource-icon electricity"></div>
-                    <span>الكهرباء: <span id="electricityValue">500</span></span>
-                </div>
-                <div class="resource">
-                    <div class="resource-icon wood"></div>
-                    <span>الخشب: <span id="woodValue">800</span></span>
-                </div>
-                <div class="resource">
-                    <div class="resource-icon stone"></div>
-                    <span>الحجر: <span id="stoneValue">600</span></span>
-                </div>
-                <div style="margin-top: 10px;">
-                    <strong>الإمبراطورية: <span id="empireScore">0</span> نقطة</strong>
-                </div>
+                <h3>💰 الموارد</h3>
+                <div>الذهب: <span id="goldValue">1000</span></div>
+                <div>النفط: <span id="oilValue">500</span></div>
             </div>
             
-            <!-- لوحة المعارك -->
             <div id="battlePanel">
-                <h3>⚔️ جيش الإمبراطورية</h3>
-                <button class="battle-btn" onclick="game.recruitUnit('soldier')" id="soldierBtn">
-                    🪖 جندي (100 ذهب)
-                </button>
-                <button class="battle-btn" onclick="game.recruitUnit('tank')" id="tankBtn">
-                    🚜 دبابة (300 ذهب، 100 نفط)
-                </button>
-                <button class="battle-btn" onclick="game.recruitUnit('aircraft')" id="aircraftBtn">
-                    🛩️ طائرة (500 ذهب، 200 نفط، 100 كهرباء)
-                </button>
-                <div style="margin-top: 10px; font-size: 0.8em; color: #f1c40f;">
-                    🎯 اختر منطقة من الخريطة للهجوم!
-                </div>
-            </div>
-            
-            <div id="performancePanel">
-                FPS: <span id="fpsCounter">60</span> | 
-                المناطق: <span id="regionsCount">1/8</span>
+                <h3>⚔️ المعركة</h3>
+                <button onclick="battle.recruitUnit('soldier')">🪖 جندي</button>
+                <button onclick="battle.recruitUnit('tank')">🚜 دبابة</button>
             </div>
         </div>
     </div>
 
     <script>
-        function showMessage(text) {
-            const message = document.createElement('div');
-            message.className = 'message';
-            message.textContent = text;
-            document.body.appendChild(message);
-            
-            setTimeout(() => {
-                document.body.removeChild(message);
-            }, 3000);
-        }
+        // 🔥 المتغيرات العامة
+        let game, battle;
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('worldMap').style.display = 'block';
-            document.getElementById('uiOverlay').style.display = 'block';
-            
-            game = new WorldEmpireGame();
-            game.start();
+            game = new WorldGame();
+            game.init();
         }
 
-        class WorldEmpireGame {
+        class WorldGame {
             constructor() {
-                this.worldMap = document.getElementById('worldMap');
-                this.battleScreen = document.getElementById('battleScreen');
-                this.mapCtx = this.worldMap.getContext('2d');
-                this.battleCtx = this.battleScreen.getContext('2d');
+                this.mapCanvas = document.getElementById('worldMap');
+                this.battleCanvas = document.getElementById('battleScreen');
+                this.mapCtx = this.mapCanvas.getContext('2d');
+                this.battleCtx = this.battleCanvas.getContext('2d');
+            }
+
+            init() {
                 this.setupCanvases();
-                this.initGame();
-            }
-
-            setupCanvases() {
-                this.worldMap.width = window.innerWidth;
-                this.worldMap.height = window.innerHeight;
-                this.battleScreen.width = window.innerWidth;
-                this.battleScreen.height = window.innerHeight;
-                
-                this.mapCtx.imageSmoothingEnabled = false;
-                this.battleCtx.imageSmoothingEnabled = false;
-            }
-
-            initGame() {
-                this.regions = new Map();
-                this.currentView = 'map'; // 'map' or 'battle'
-                this.selectedRegion = null;
-                this.performance = { fps: 0, frameCount: 0, lastFpsUpdate: 0 };
-                
-                this.empire = {
-                    resources: {
-                        gold: 2000,
-                        oil: 1000,
-                        electricity: 500,
-                        wood: 800,
-                        stone: 600
-                    },
-                    score: 0,
-                    capitalLevel: 1
-                };
-                
-                this.createWorldMap();
-                this.updateResourceDisplay();
-                this.updateButtons();
-                this.updateRegionsList();
-                
-                setInterval(() => this.updatePerformance(), 1000);
-                setInterval(() => this.generateResources(), 5000);
-            }
-
-            createWorldMap() {
-                // إنشاء المناطق المختلفة
-                const regionsData = [
-                    { id: 'capital', name: 'العاصمة', x: 0.2, y: 0.5, type: 'capital', resources: { gold: 100, oil: 50, electricity: 25, wood: 40, stone: 30 }, level: 1, owner: 'player' },
-                    { id: 'forest', name: 'غابة الخشب', x: 0.4, y: 0.3, type: 'forest', resources: { gold: 20, oil: 10, wood: 100, stone: 20 }, level: 1, owner: 'neutral' },
-                    { id: 'mountains', name: 'جبال الحجر', x: 0.6, y: 0.2, type: 'mountains', resources: { gold: 30, oil: 5, wood: 10, stone: 120 }, level: 1, owner: 'neutral' },
-                    { id: 'desert', name: 'صحراء النفط', x: 0.8, y: 0.4, type: 'desert', resources: { gold: 40, oil: 150, electricity: 10, wood: 5, stone: 15 }, level: 1, owner: 'enemy' },
-                    { id: 'plains', name: 'سهول الذهب', x: 0.3, y: 0.7, type: 'plains', resources: { gold: 200, oil: 30, electricity: 20, wood: 25, stone: 25 }, level: 1, owner: 'enemy' },
-                    { id: 'coast', name: 'ساحل الكهرباء', x: 0.7, y: 0.6, type: 'coast', resources: { gold: 25, oil: 40, electricity: 100, wood: 15, stone: 20 }, level: 1, owner: 'enemy' },
-                    { id: 'volcano', name: 'بركان الأساطير', x: 0.5, y: 0.8, type: 'volcano', resources: { gold: 150, oil: 80, electricity: 60, wood: 5, stone: 80 }, level: 2, owner: 'enemy' },
-                    { id: 'fortress', name: 'قلعة التنين', x: 0.9, y: 0.9, type: 'fortress', resources: { gold: 300, oil: 120, electricity: 80, wood: 40, stone: 100 }, level: 3, owner: 'enemy' }
-                ];
-
-                regionsData.forEach(regionData => {
-                    this.regions.set(regionData.id, regionData);
-                });
-            }
-
-            generateResources() {
-                // توليد موارد من المناطق التي يملكها اللاعب
-                this.regions.forEach(region => {
-                    if (region.owner === 'player') {
-                        Object.keys(region.resources).forEach(resource => {
-                            this.empire.resources[resource] += Math.floor(region.resources[resource] * region.level * 0.1);
-                        });
-                        this.empire.score += region.level * 10;
-                    }
-                });
-                this.updateResourceDisplay();
-            }
-
-            start() {
+                this.createRegions();
                 this.setupEventListeners();
                 this.gameLoop();
             }
 
+            setupCanvases() {
+                this.mapCanvas.width = window.innerWidth;
+                this.mapCanvas.height = window.innerHeight;
+                this.battleCanvas.width = window.innerWidth;
+                this.battleCanvas.height = window.innerHeight;
+            }
+
+            createRegions() {
+                this.regions = [
+                    { id: 'capital', name: 'العاصمة', x: 200, y: 300, owner: 'player', level: 1 },
+                    { id: 'forest', name: 'الغابة', x: 400, y: 200, owner: 'neutral', level: 1 },
+                    { id: 'mountains', name: 'الجبال', x: 600, y: 400, owner: 'enemy', level: 1 }
+                ];
+            }
+
             setupEventListeners() {
-                this.worldMap.addEventListener('click', (e) => this.handleMapClick(e));
-                this.battleScreen.addEventListener('click', (e) => this.handleBattleClick(e));
-                
-                document.addEventListener('keydown', (e) => {
-                    switch(e.key) {
-                        case 'm': case 'M': this.returnToMap(); break;
-                        case '1': if (this.currentView === 'battle') this.recruitUnit('soldier'); break;
-                        case '2': if (this.currentView === 'battle') this.recruitUnit('tank'); break;
-                        case '3': if (this.currentView === 'battle') this.recruitUnit('aircraft'); break;
-                        case 'Escape': this.returnToMap(); break;
-                    }
-                });
-            }
-
-            handleMapClick(e) {
-                const rect = this.worldMap.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                // البحث عن المنطقة المنقورة
-                let clickedRegion = null;
-                let closestDistance = Infinity;
-                
-                this.regions.forEach(region => {
-                    const regionX = region.x * this.worldMap.width;
-                    const regionY = region.y * this.worldMap.height;
-                    const distance = Math.sqrt((x - regionX) ** 2 + (y - regionY) ** 2);
+                this.mapCanvas.addEventListener('click', (e) => {
+                    const rect = this.mapCanvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
                     
-                    if (distance < 50 && distance < closestDistance) {
-                        closestDistance = distance;
-                        clickedRegion = region;
-                    }
+                    this.regions.forEach(region => {
+                        const distance = Math.sqrt((x - region.x) ** 2 + (y - region.y) ** 2);
+                        if (distance < 50 && region.owner !== 'player') {
+                            this.startBattle(region);
+                        }
+                    });
                 });
-                
-                if (clickedRegion) {
-                    if (clickedRegion.owner === 'player') {
-                        showMessage(`🏰 ${clickedRegion.name} - منطقة آمنة`);
-                    } else if (clickedRegion.owner === 'neutral') {
-                        this.startBattle(clickedRegion);
-                    } else {
-                        this.startBattle(clickedRegion);
-                    }
-                }
-            }
-
-            handleBattleClick(e) {
-                // معالجة النقر في شاشة المعركة
-                if (this.battleGame) {
-                    this.battleGame.handleClick(e);
-                }
             }
 
             startBattle(region) {
-                this.selectedRegion = region;
-                this.currentView = 'battle';
-                this.worldMap.style.display = 'none';
-                this.battleScreen.style.display = 'block';
+                // 🔄 الانتقال لشاشة المعركة
+                this.mapCanvas.style.display = 'none';
+                this.battleCanvas.style.display = 'block';
+                document.getElementById('battlePanel').style.display = 'block';
                 
-                showMessage(`⚔️ معركة ${region.name} - المستوى ${region.level}`);
-                
-                // بدء معركة جديدة
-                this.battleGame = new BattleGame(this.battleScreen, region, this);
-                this.battleGame.start();
+                // 🎮 بدء المعركة
+                battle = new BattleGame(region, this);
+                battle.start();
             }
 
             returnToMap() {
-                this.currentView = 'map';
-                this.worldMap.style.display = 'block';
-                this.battleScreen.style.display = 'none';
-                this.selectedRegion = null;
-                
-                if (this.battleGame) {
-                    this.battleGame = null;
-                }
+                this.mapCanvas.style.display = 'block';
+                this.battleCanvas.style.display = 'none';
+                document.getElementById('battlePanel').style.display = 'none';
             }
 
-            winBattle(region) {
-                region.owner = 'player';
-                this.empire.score += region.level * 100;
-                
-                // مكافأة الموارد
-                Object.keys(region.resources).forEach(resource => {
-                    this.empire.resources[resource] += region.resources[resource] * region.level * 5;
-                });
-                
-                showMessage(`🎉 انتصرت على ${region.name}! +${region.level * 100} نقطة`);
-                this.updateRegionsList();
-                this.updateResourceDisplay();
-                this.returnToMap();
-            }
-
-            loseBattle() {
-                showMessage('💔 هزمت في المعركة! حاول مرة أخرى');
-                this.returnToMap();
-            }
-
-            recruitUnit(unitType) {
-                if (this.battleGame) {
-                    this.battleGame.recruitUnit(unitType);
-                }
-            }
-
-            upgradeCapital() {
-                const cost = { gold: 500, wood: 200, stone: 150 };
-                if (this.canAfford(cost)) {
-                    this.deductResources(cost);
-                    this.empire.capitalLevel++;
-                    this.empire.score += 200;
-                    showMessage(`⬆️ العاصمة تم تطويرها للمستوى ${this.empire.capitalLevel}`);
-                    this.updateResourceDisplay();
-                    this.updateButtons();
-                } else {
-                    showMessage('❌ موارد غير كافية لتطوير العاصمة!');
-                }
-            }
-
-            canAfford(cost) {
-                return Object.keys(cost).every(resource => 
-                    this.empire.resources[resource] >= cost[resource]
-                );
-            }
-
-            deductResources(cost) {
-                Object.keys(cost).forEach(resource => {
-                    this.empire.resources[resource] -= cost[resource];
-                });
-                this.updateResourceDisplay();
-            }
-
-            updateResourceDisplay() {
-                document.getElementById('goldValue').textContent = Math.floor(this.empire.resources.gold);
-                document.getElementById('oilValue').textContent = Math.floor(this.empire.resources.oil);
-                document.getElementById('electricityValue').textContent = Math.floor(this.empire.resources.electricity);
-                document.getElementById('woodValue').textContent = Math.floor(this.empire.resources.wood);
-                document.getElementById('stoneValue').textContent = Math.floor(this.empire.resources.stone);
-                document.getElementById('empireScore').textContent = this.empire.score;
-                document.getElementById('capitalLevel').textContent = this.empire.capitalLevel;
-            }
-
-            updateButtons() {
-                const upgradeCost = { gold: 500, wood: 200, stone: 150 };
-                document.getElementById('upgradeBtn').disabled = !this.canAfford(upgradeCost);
-            }
-
-            updateRegionsList() {
-                const regionsList = document.getElementById('regionsList');
-                regionsList.innerHTML = '';
-                
-                let playerRegions = 0;
-                let totalRegions = 0;
-                
-                this.regions.forEach(region => {
-                    totalRegions++;
-                    if (region.owner === 'player') playerRegions++;
-                    
-                    if (region.id !== 'capital') {
-                        const regionDiv = document.createElement('div');
-                        regionDiv.className = `region-info ${region.owner}`;
-                        
-                        let emoji = '❓';
-                        if (region.type === 'forest') emoji = '🌲';
-                        else if (region.type === 'mountains') emoji = '⛰️';
-                        else if (region.type === 'desert') emoji = '🏜️';
-                        else if (region.type === 'plains') emoji = '🌾';
-                        else if (region.type === 'coast') emoji = '🌊';
-                        else if (region.type === 'volcano') emoji = '🌋';
-                        else if (region.type === 'fortress') emoji = '🏰';
-                        
-                        let ownerText = '👤 ملكك';
-                        if (region.owner === 'neutral') ownerText = '⚪ محايد';
-                        else if (region.owner === 'enemy') ownerText = '🔴 عدو';
-                        
-                        regionDiv.innerHTML = `
-                            <strong>${emoji} ${region.name}</strong>
-                            <div>${ownerText} - المستوى ${region.level}</div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${region.owner === 'player' ? '100' : '0'}%"></div>
-                            </div>
-                        `;
-                        regionsList.appendChild(regionDiv);
-                    }
-                });
-                
-                document.getElementById('regionsCount').textContent = `${playerRegions}/${totalRegions}`;
-            }
-
-            renderWorldMap() {
+            renderMap() {
                 this.mapCtx.fillStyle = '#1a3c2d';
-                this.mapCtx.fillRect(0, 0, this.worldMap.width, this.worldMap.height);
+                this.mapCtx.fillRect(0, 0, this.mapCanvas.width, this.mapCanvas.height);
                 
-                // رسم الخلفية
-                this.drawMapBackground();
-                
-                // رسم المناطق
                 this.regions.forEach(region => {
                     this.drawRegion(region);
                 });
             }
 
-            drawMapBackground() {
-                // رسم تضاريس الخريطة
-                this.mapCtx.fillStyle = '#2c5530';
-                this.mapCtx.fillRect(0, this.worldMap.height * 0.6, this.worldMap.width, this.worldMap.height * 0.4);
-                
-                this.mapCtx.fillStyle = '#8B4513';
-                this.mapCtx.beginPath();
-                this.mapCtx.arc(this.worldMap.width * 0.8, this.worldMap.height * 0.4, 100, 0, Math.PI * 2);
-                this.mapCtx.fill();
-                
-                this.mapCtx.fillStyle = '#34495e';
-                this.mapCtx.beginPath();
-                this.mapCtx.moveTo(this.worldMap.width * 0.6, this.worldMap.height * 0.2);
-                this.mapCtx.lineTo(this.worldMap.width * 0.7, this.worldMap.height * 0.1);
-                this.mapCtx.lineTo(this.worldMap.width * 0.8, this.worldMap.height * 0.2);
-                this.mapCtx.fill();
-            }
-
             drawRegion(region) {
-                const x = region.x * this.worldMap.width;
-                const y = region.y * this.worldMap.height;
-                const radius = 40 + (region.level * 5);
-                
-                // لون المنطقة حسب المالك
-                let color = '#3498db';
-                if (region.owner === 'enemy') color = '#e74c3c';
-                else if (region.owner === 'neutral') color = '#f1c40f';
-                else if (region.type === 'capital') color = '#9b59b6';
+                const color = region.owner === 'player' ? '#3498db' : 
+                             region.owner === 'enemy' ? '#e74c3c' : '#f1c40f';
                 
                 this.mapCtx.fillStyle = color;
                 this.mapCtx.beginPath();
-                this.mapCtx.arc(x, y, radius, 0, Math.PI * 2);
+                this.mapCtx.arc(region.x, region.y, 40, 0, Math.PI * 2);
                 this.mapCtx.fill();
                 
-                // حدود المنطقة
-                this.mapCtx.strokeStyle = '#2c3e50';
-                this.mapCtx.lineWidth = 3;
-                this.mapCtx.stroke();
-                
-                // أيقونة المنطقة
-                let emoji = '🏰';
-                if (region.type === 'forest') emoji = '🌲';
-                else if (region.type === 'mountains') emoji = '⛰️';
-                else if (region.type === 'desert') emoji = '🏜️';
-                else if (region.type === 'plains') emoji = '🌾';
-                else if (region.type === 'coast') emoji = '🌊';
-                else if (region.type === 'volcano') emoji = '🌋';
-                else if (region.type === 'fortress') emoji = '🏯';
-                
-                this.mapCtx.font = '24px Arial';
                 this.mapCtx.fillStyle = 'white';
-                this.mapCtx.textAlign = 'center';
-                this.mapCtx.fillText(emoji, x, y + 8);
-                
-                // اسم المنطقة
-                this.mapCtx.font = '12px Arial';
-                this.mapCtx.fillText(region.name, x, y + radius + 15);
-            }
-
-            updatePerformance() {
-                const now = Date.now();
-                const elapsed = now - this.performance.lastFpsUpdate;
-                
-                this.performance.fps = Math.round((this.performance.frameCount * 1000) / elapsed);
-                this.performance.lastFpsUpdate = now;
-                this.performance.frameCount = 0;
-                
-                document.getElementById('fpsCounter').textContent = this.performance.fps;
+                this.mapCtx.font = '14px Arial';
+                this.mapCtx.fillText(region.name, region.x - 30, region.y + 60);
             }
 
             gameLoop() {
-                if (this.currentView === 'map') {
-                    this.renderWorldMap();
-                } else if (this.currentView === 'battle' && this.battleGame) {
-                    this.battleGame.gameLoop();
-                }
-                
-                this.performance.frameCount++;
+                this.renderMap();
                 requestAnimationFrame(() => this.gameLoop());
             }
         }
 
-        // نظام المعارك (مبسط من الكود السابق)
+        // 🎯 نظام المعارك الكامل
         class BattleGame {
-            constructor(canvas, region, worldGame) {
-                this.canvas = canvas;
-                this.ctx = canvas.getContext('2d');
+            constructor(region, worldGame) {
                 this.region = region;
                 this.worldGame = worldGame;
+                this.canvas = document.getElementById('battleScreen');
+                this.ctx = this.canvas.getContext('2d');
                 this.units = new Map();
+                this.bullets = [];
                 this.selectedUnits = [];
-                this.performance = { fps: 0, frameCount: 0, lastFpsUpdate: 0 };
                 
-                this.playerResources = { ...worldGame.empire.resources };
+                this.resources = {
+                    gold: 1000,
+                    oil: 500
+                };
+            }
+
+            start() {
                 this.createInitialUnits();
+                this.setupEventListeners();
+                this.gameLoop();
             }
 
             createInitialUnits() {
                 // وحدات اللاعب
                 for (let i = 0; i < 3; i++) {
-                    this.createUnit('soldier', 150 + i * 80, this.canvas.height - 150, 'blue', true);
+                    this.createUnit('soldier', 100 + i * 80, 400, 'blue', true);
                 }
                 
-                // وحدات العدو (تعتمد على مستوى المنطقة)
-                const enemyCount = 2 + this.region.level;
-                for (let i = 0; i < enemyCount; i++) {
-                    this.createUnit('soldier', this.canvas.width - 200 - i * 70, this.canvas.height - 150, 'red', true);
-                }
-                
-                if (this.region.level >= 2) {
-                    this.createUnit('tank', this.canvas.width - 300, this.canvas.height - 200, 'red', true);
+                // وحدات العدو
+                for (let i = 0; i < 3; i++) {
+                    this.createUnit('soldier', 600 + i * 80, 400, 'red', true);
                 }
             }
 
             createUnit(type, x, y, team, free = false) {
-                // ... (نفس نظام الوحدات من الكود السابق)
-                const id = `unit_${Date.now()}_${Math.random()}`;
+                const cost = this.getUnitCost(type);
+                if (!free && !this.canAfford(cost)) return null;
+                if (!free) this.deductResources(cost);
+                
+                const id = `unit_${Date.now()}`;
                 const unit = {
                     id, type, x, y, team,
                     targetX: x, targetY: y,
                     health: 100, maxHealth: 100,
                     speed: 2, attack: 15, range: 60,
+                    attackSpeed: 1000, lastAttack: 0,
                     selected: false, isAttacking: false, target: null
                 };
+                
                 this.units.set(id, unit);
                 return unit;
             }
 
-            start() {
-                this.setupEventListeners();
+            recruitUnit(unitType) {
+                this.createUnit(unitType, 100, 400, 'blue');
             }
 
             setupEventListeners() {
-                // ... (نظام التحكم السابق)
-            }
-
-            recruitUnit(unitType) {
-                const cost = this.getUnitCost(unitType);
-                if (this.canAfford(cost)) {
-                    this.deductResources(cost);
-                    this.createUnit(unitType, 200, this.canvas.height - 150, 'blue');
-                }
-            }
-
-            canAfford(cost) {
-                return this.playerResources.gold >= cost.gold &&
-                       this.playerResources.oil >= cost.oil &&
-                       this.playerResources.electricity >= cost.electricity;
-            }
-
-            deductResources(cost) {
-                this.playerResources.gold -= cost.gold;
-                this.playerResources.oil -= cost.oil;
-                this.playerResources.electricity -= cost.electricity;
-            }
-
-            getUnitCost(unitType) {
-                const costs = {
-                    soldier: { gold: 100, oil: 0, electricity: 0 },
-                    tank: { gold: 300, oil: 100, electricity: 0 },
-                    aircraft: { gold: 500, oil: 200, electricity: 100 }
-                };
-                return costs[unitType];
+                this.canvas.addEventListener('click', (e) => this.handleClick(e));
             }
 
             handleClick(e) {
-                // ... (نظام التحكم السابق)
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // البحث عن وحدة منقورة
+                let clickedUnit = null;
+                for (const unit of this.units.values()) {
+                    const distance = Math.sqrt((unit.x - x) ** 2 + (unit.y - y) ** 2);
+                    if (distance < 20 && unit.team === 'blue') {
+                        clickedUnit = unit;
+                        break;
+                    }
+                }
+                
+                if (clickedUnit) {
+                    this.selectUnit(clickedUnit);
+                } else if (this.selectedUnits.length > 0) {
+                    this.moveSelectedUnits(x, y);
+                }
+            }
+
+            selectUnit(unit) {
+                this.clearSelection();
+                unit.selected = true;
+                this.selectedUnits.push(unit);
+            }
+
+            clearSelection() {
+                this.selectedUnits.forEach(unit => unit.selected = false);
+                this.selectedUnits = [];
+            }
+
+            moveSelectedUnits(x, y) {
+                this.selectedUnits.forEach(unit => {
+                    unit.targetX = x;
+                    unit.targetY = y;
+                    unit.isAttacking = false;
+                    unit.target = null;
+                });
+            }
+
+            update() {
+                // تحديث حركة الوحدات
+                for (const unit of this.units.values()) {
+                    this.updateUnit(unit);
+                }
+                
+                // تحديث القتال
+                this.updateCombat();
+                
+                // تحديث الرصاصات
+                this.updateBullets();
+                
+                // التحقق من نهاية المعركة
+                this.checkBattleEnd();
+            }
+
+            updateUnit(unit) {
+                const dx = unit.targetX - unit.x;
+                const dy = unit.targetY - unit.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 2) {
+                    unit.x += (dx / distance) * Math.min(unit.speed, distance * 0.1);
+                    unit.y += (dy / distance) * Math.min(unit.speed, distance * 0.1);
+                }
+            }
+
+            updateCombat() {
+                const now = Date.now();
+                
+                for (const unit of this.units.values()) {
+                    if (unit.isAttacking && unit.target && unit.health > 0) {
+                        const target = unit.target;
+                        const distance = Math.sqrt((unit.x - target.x) ** 2 + (unit.y - target.y) ** 2);
+                        
+                        if (distance <= unit.range && now - unit.lastAttack >= unit.attackSpeed) {
+                            target.health -= unit.attack;
+                            unit.lastAttack = now;
+                            
+                            if (target.health <= 0) {
+                                this.units.delete(target.id);
+                            }
+                        }
+                    }
+                }
+            }
+
+            updateBullets() {
+                // ... (نظام الرصاصات)
             }
 
             checkBattleEnd() {
-                let playerUnits = 0;
-                let enemyUnits = 0;
+                let blueUnits = 0, redUnits = 0;
                 
-                this.units.forEach(unit => {
+                for (const unit of this.units.values()) {
                     if (unit.health > 0) {
-                        if (unit.team === 'blue') playerUnits++;
-                        else enemyUnits++;
+                        if (unit.team === 'blue') blueUnits++;
+                        else redUnits++;
                     }
-                });
-                
-                if (playerUnits === 0) {
-                    this.worldGame.loseBattle();
-                } else if (enemyUnits === 0) {
-                    this.worldGame.winBattle(this.region);
                 }
+                
+                if (blueUnits === 0) {
+                    alert('💔 هزمت في المعركة!');
+                    this.worldGame.returnToMap();
+                } else if (redUnits === 0) {
+                    alert('🎉 انتصرت! المنطقة الآن تحت سيطرتك!');
+                    this.region.owner = 'player';
+                    this.worldGame.returnToMap();
+                }
+            }
+
+            render() {
+                this.ctx.fillStyle = '#1a3c2d';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // رسم الأرض
+                this.ctx.fillStyle = '#8B4513';
+                this.ctx.fillRect(0, 450, this.canvas.width, 150);
+                
+                // رسم الوحدات
+                for (const unit of this.units.values()) {
+                    this.drawUnit(unit);
+                }
+            }
+
+            drawUnit(unit) {
+                this.ctx.fillStyle = unit.team === 'blue' ? '#3498db' : '#e74c3c';
+                this.ctx.fillRect(unit.x - 8, unit.y - 12, 16, 24);
+                
+                if (unit.selected) {
+                    this.ctx.strokeStyle = '#f1c40f';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.strokeRect(unit.x - 12, unit.y - 16, 24, 32);
+                }
+                
+                // شريط الصحة
+                const healthRatio = unit.health / unit.maxHealth;
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.fillRect(unit.x - 10, unit.y - 20, 20, 3);
+                this.ctx.fillStyle = '#2ecc71';
+                this.ctx.fillRect(unit.x - 10, unit.y - 20, 20 * healthRatio, 3);
             }
 
             gameLoop() {
                 this.update();
                 this.render();
-                this.checkBattleEnd();
+                requestAnimationFrame(() => this.gameLoop());
             }
 
-            update() {
-                // ... (نظام التحديث السابق)
+            canAfford(cost) {
+                return this.resources.gold >= cost.gold && this.resources.oil >= cost.oil;
             }
 
-            render() {
-                this.ctx.fillStyle = 'rgba(26, 60, 45, 0.9)';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // رسم أرض المعركة حسب نوع المنطقة
-                this.drawBattleGround();
-                
-                // رسم الوحدات
-                this.units.forEach(unit => {
-                    this.drawUnit(unit);
-                });
+            deductResources(cost) {
+                this.resources.gold -= cost.gold;
+                this.resources.oil -= cost.oil;
             }
 
-            drawBattleGround() {
-                let groundColor = '#8B4513';
-                if (this.region.type === 'desert') groundColor = '#f39c12';
-                else if (this.region.type === 'forest') groundColor = '#27ae60';
-                else if (this.region.type === 'mountains') groundColor = '#7f8c8d';
-                
-                this.ctx.fillStyle = groundColor;
-                this.ctx.fillRect(0, this.canvas.height - 100, this.canvas.width, 100);
-            }
-
-            drawUnit(unit) {
-                // ... (رسم الوحدات السابق)
+            getUnitCost(unitType) {
+                return unitType === 'soldier' ? 
+                    { gold: 100, oil: 0 } : { gold: 300, oil: 100 };
             }
         }
 
+        // 🔧 تعديل حجم النوافذ
         window.addEventListener('resize', () => {
             if (game) {
                 game.setupCanvases();
             }
         });
-
-        let game;
     </script>
 </body>
 </html>
