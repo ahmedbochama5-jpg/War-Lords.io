@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>War Lords - الإمبراطورية الكاملة</title>
+    <title>War Lords - تصميمات محسنة</title>
     <style>
         * {
             margin: 0;
@@ -57,11 +57,6 @@
             z-index: 1000;
         }
         
-        .titleContainer {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-        
         .mainTitle {
             font-size: 4em;
             font-weight: bold;
@@ -72,12 +67,6 @@
             margin-bottom: 10px;
         }
         
-        .subTitle {
-            font-size: 1.5em;
-            color: #3498db;
-            margin-bottom: 30px;
-        }
-        
         .startButton {
             background: linear-gradient(45deg, #e74c3c, #c0392b);
             color: white;
@@ -86,17 +75,9 @@
             font-size: 1.5em;
             border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
-            font-weight: bold;
             margin: 10px;
         }
-        
-        .startButton:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(231, 76, 60, 0.5);
-        }
-        
+
         #uiOverlay {
             position: absolute;
             top: 0;
@@ -106,95 +87,34 @@
             pointer-events: none;
         }
         
-        #mapPanel, #resourcesPanel, #battlePanel {
+        #battlePanel {
             position: absolute;
+            bottom: 20px;
+            left: 20px;
             background: rgba(0, 0, 0, 0.85);
             padding: 15px;
             border-radius: 15px;
-            border: 2px solid;
-            backdrop-filter: blur(10px);
+            border: 2px solid #e74c3c;
             pointer-events: auto;
-        }
-        
-        #mapPanel {
-            top: 20px;
-            left: 20px;
-            border-color: #3498db;
-            min-width: 300px;
-        }
-        
-        #resourcesPanel {
-            top: 20px;
-            right: 20px;
-            border-color: #2ecc71;
-        }
-        
-        #battlePanel {
-            bottom: 20px;
-            left: 20px;
-            border-color: #e74c3c;
             display: none;
         }
         
         button {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            background: #e74c3c;
             color: white;
             border: none;
-            padding: 12px 18px;
+            padding: 10px 15px;
             margin: 5px;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
-        button:hover {
-            transform: translateY(-2px);
-        }
-        
-        button:disabled {
-            background: #7f8c8d;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .unit-btn {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-        }
-        
-        .map-btn {
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
-        }
-        
-        .region-info {
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .region-info.enemy {
-            border-left-color: #e74c3c;
-        }
-        
-        .region-info.neutral {
-            border-left-color: #f1c40f;
-        }
-        
-        .resource {
-            margin: 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
+
         .health-bar {
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: #e74c3c;
             border-radius: 2px;
-            margin-top: 5px;
+            margin-top: 3px;
             overflow: hidden;
         }
         
@@ -203,49 +123,19 @@
             background: #2ecc71;
             transition: width 0.3s;
         }
-        
-        .message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            border: 2px solid #e74c3c;
-            z-index: 2000;
-            text-align: center;
-        }
-        
-        .bullet {
+
+        .selection-circle {
             position: absolute;
-            width: 6px;
-            height: 6px;
-            background: #f1c40f;
+            border: 2px dashed #f1c40f;
             border-radius: 50%;
             pointer-events: none;
-            z-index: 100;
-        }
-        
-        .missile {
-            position: absolute;
-            width: 12px;
-            height: 4px;
-            background: linear-gradient(90deg, #ff6b00, #ff0000);
-            border-radius: 2px;
-            pointer-events: none;
-            z-index: 100;
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <div id="startScreen">
-            <div class="titleContainer">
-                <div class="mainTitle">WAR LORDS</div>
-                <div class="subTitle">الإمبراطورية الكاملة - كل الميزات مجتمعة!</div>
-            </div>
+            <div class="mainTitle">WAR LORDS</div>
             <button class="startButton" onclick="startGame()">🚀 ابدأ اللعبة</button>
         </div>
         
@@ -253,291 +143,66 @@
         <canvas id="battleScreen"></canvas>
         
         <div id="uiOverlay">
-            <div id="mapPanel">
-                <h3>🗺️ إمبراطوريتك</h3>
-                <div id="regionsList"></div>
-                <button class="map-btn" onclick="game.returnToMap()">🗺️ العودة للخريطة</button>
-            </div>
-            
-            <div id="resourcesPanel">
-                <h3>💰 الموارد</h3>
-                <div class="resource">ذهب: <span id="goldValue">1500</span></div>
-                <div class="resource">نفط: <span id="oilValue">800</span></div>
-                <div class="resource">كهرباء: <span id="electricityValue">400</span></div>
-            </div>
-            
             <div id="battlePanel">
                 <h3>⚔️ الجيش</h3>
-                <button class="unit-btn" onclick="battle.recruitUnit('soldier')">🪖 جندي (100)</button>
-                <button class="unit-btn" onclick="battle.recruitUnit('tank')">🚜 دبابة (300)</button>
-                <button class="unit-btn" onclick="battle.recruitUnit('aircraft')">🛩️ طائرة (500)</button>
+                <button onclick="battle.recruitUnit('soldier')">🪖 جندي (100)</button>
+                <button onclick="battle.recruitUnit('tank')">🚜 دبابة (300)</button>
+                <button onclick="battle.recruitUnit('aircraft')">🛩️ طائرة (500)</button>
             </div>
         </div>
     </div>
 
     <script>
-        // 🎮 المتغيرات العامة
         let game, battle;
-        let currentView = 'map';
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
-            game = new WorldGame();
-            game.init();
-        }
-
-        function showMessage(text, duration = 3000) {
-            const message = document.createElement('div');
-            message.className = 'message';
-            message.textContent = text;
-            document.body.appendChild(message);
+            document.getElementById('battleScreen').style.display = 'block';
+            document.getElementById('battlePanel').style.display = 'block';
             
-            setTimeout(() => {
-                if (document.body.contains(message)) {
-                    document.body.removeChild(message);
-                }
-            }, duration);
+            battle = new BattleGame();
+            battle.start();
         }
 
-        // 🌍 نظام العالم
-        class WorldGame {
-            constructor() {
-                this.mapCanvas = document.getElementById('worldMap');
-                this.battleCanvas = document.getElementById('battleScreen');
-                this.mapCtx = this.mapCanvas.getContext('2d');
-                this.battleCtx = this.battleCanvas.getContext('2d');
-            }
-
-            init() {
-                this.setupCanvases();
-                this.createRegions();
-                this.setupEventListeners();
-                this.gameLoop();
-                
-                this.resources = {
-                    gold: 1500,
-                    oil: 800,
-                    electricity: 400
-                };
-                this.updateResourceDisplay();
-            }
-
-            setupCanvases() {
-                this.mapCanvas.width = window.innerWidth;
-                this.mapCanvas.height = window.innerHeight;
-                this.battleCanvas.width = window.innerWidth;
-                this.battleCanvas.height = window.innerHeight;
-            }
-
-            createRegions() {
-                this.regions = [
-                    { id: 'capital', name: '🏰 العاصمة', x: 0.2, y: 0.5, type: 'capital', owner: 'player', level: 1 },
-                    { id: 'forest', name: '🌲 غابة الخشب', x: 0.4, y: 0.3, type: 'forest', owner: 'neutral', level: 1 },
-                    { id: 'mountains', name: '⛰️ جبال الحجر', x: 0.6, y: 0.2, type: 'mountains', owner: 'neutral', level: 1 },
-                    { id: 'desert', name: '🏜️ صحراء النفط', x: 0.8, y: 0.4, type: 'desert', owner: 'enemy', level: 1 },
-                    { id: 'plains', name: '🌾 سهول الذهب', x: 0.3, y: 0.7, type: 'plains', owner: 'enemy', level: 2 }
-                ];
-            }
-
-            setupEventListeners() {
-                this.mapCanvas.addEventListener('click', (e) => {
-                    if (currentView !== 'map') return;
-                    
-                    const rect = this.mapCanvas.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    
-                    this.regions.forEach(region => {
-                        const regionX = region.x * this.mapCanvas.width;
-                        const regionY = region.y * this.mapCanvas.height;
-                        const distance = Math.sqrt((x - regionX) ** 2 + (y - regionY) ** 2);
-                        
-                        if (distance < 50 && region.owner !== 'player') {
-                            this.startBattle(region);
-                        }
-                    });
-                });
-            }
-
-            startBattle(region) {
-                currentView = 'battle';
-                this.mapCanvas.style.display = 'none';
-                this.battleCanvas.style.display = 'block';
-                document.getElementById('battlePanel').style.display = 'block';
-                document.getElementById('mapPanel').style.display = 'none';
-                
-                showMessage(`⚔️ بدأت معركة ${region.name}!`);
-                
-                battle = new BattleGame(region, this);
-                battle.start();
-            }
-
-            returnToMap() {
-                currentView = 'map';
-                this.mapCanvas.style.display = 'block';
-                this.battleCanvas.style.display = 'none';
-                document.getElementById('battlePanel').style.display = 'none';
-                document.getElementById('mapPanel').style.display = 'block';
-                
-                if (battle) {
-                    battle = null;
-                }
-                
-                this.updateRegionsList();
-            }
-
-            winBattle(region) {
-                region.owner = 'player';
-                showMessage(`🎉 انتصرت! ${region.name} الآن تحت سيطرتك!`);
-                this.updateRegionsList();
-            }
-
-            updateResourceDisplay() {
-                document.getElementById('goldValue').textContent = this.resources.gold;
-                document.getElementById('oilValue').textContent = this.resources.oil;
-                document.getElementById('electricityValue').textContent = this.resources.electricity;
-            }
-
-            updateRegionsList() {
-                const regionsList = document.getElementById('regionsList');
-                regionsList.innerHTML = '';
-                
-                this.regions.forEach(region => {
-                    if (region.id !== 'capital') {
-                        const regionDiv = document.createElement('div');
-                        regionDiv.className = `region-info ${region.owner}`;
-                        
-                        let status = '👤 ملكك';
-                        if (region.owner === 'neutral') status = '⚪ محايد';
-                        else if (region.owner === 'enemy') status = '🔴 عدو';
-                        
-                        regionDiv.innerHTML = `
-                            <strong>${region.name}</strong>
-                            <div>${status} - المستوى ${region.level}</div>
-                        `;
-                        regionsList.appendChild(regionDiv);
-                    }
-                });
-            }
-
-            renderMap() {
-                this.mapCtx.fillStyle = '#1a3c2d';
-                this.mapCtx.fillRect(0, 0, this.mapCanvas.width, this.mapCanvas.height);
-                
-                this.regions.forEach(region => {
-                    this.drawRegion(region);
-                });
-            }
-
-            drawRegion(region) {
-                const x = region.x * this.mapCanvas.width;
-                const y = region.y * this.mapCanvas.height;
-                const radius = 40;
-                
-                let color = '#3498db';
-                if (region.owner === 'enemy') color = '#e74c3c';
-                else if (region.owner === 'neutral') color = '#f1c40f';
-                
-                this.mapCtx.fillStyle = color;
-                this.mapCtx.beginPath();
-                this.mapCtx.arc(x, y, radius, 0, Math.PI * 2);
-                this.mapCtx.fill();
-                
-                this.mapCtx.strokeStyle = '#2c3e50';
-                this.mapCtx.lineWidth = 3;
-                this.mapCtx.stroke();
-                
-                this.mapCtx.fillStyle = 'white';
-                this.mapCtx.font = '12px Arial';
-                this.mapCtx.textAlign = 'center';
-                this.mapCtx.fillText(region.name.split(' ')[1], x, y + radius + 15);
-            }
-
-            gameLoop() {
-                if (currentView === 'map') {
-                    this.renderMap();
-                }
-                requestAnimationFrame(() => this.gameLoop());
-            }
-        }
-
-        // ⚔️ نظام المعارك المتكامل
+        // 🎨 نظام المعارك مع تصميمات محسنة
         class BattleGame {
-            constructor(region, worldGame) {
-                this.region = region;
-                this.worldGame = worldGame;
+            constructor() {
                 this.canvas = document.getElementById('battleScreen');
                 this.ctx = this.canvas.getContext('2d');
                 this.units = new Map();
-                this.bullets = [];
-                this.missiles = [];
                 this.selectedUnits = [];
                 
-                this.resources = { ...worldGame.resources };
-                this.battleTime = 0;
-                this.enemyAggression = 0;
+                this.setupCanvas();
+                this.createInitialUnits();
             }
 
-            start() {
-                this.createInitialUnits();
-                this.setupEventListeners();
-                this.gameLoop();
-                
-                // العدو يبدأ الهجوم بعد 5 ثواني
-                setTimeout(() => {
-                    this.enemyAggression = 1;
-                    showMessage('🚨 العدو يبدأ الهجوم!');
-                }, 5000);
+            setupCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
             }
 
             createInitialUnits() {
-                // وحدات اللاعب
-                for (let i = 0; i < 4; i++) {
-                    this.createUnit('soldier', 150 + i * 80, this.canvas.height - 150, 'blue', true);
-                }
-                this.createUnit('tank', 200, this.canvas.height - 200, 'blue', true);
+                // 🎯 وحدات اللاعب - تصميمات محسنة
+                this.createUnit('soldier', 200, 400, 'blue');
+                this.createUnit('soldier', 280, 400, 'blue');
+                this.createUnit('tank', 150, 350, 'blue');
+                this.createUnit('aircraft', 250, 200, 'blue');
                 
-                // وحدات العدو
-                const enemyCount = 3 + this.region.level;
-                for (let i = 0; i < enemyCount; i++) {
-                    this.createUnit('soldier', this.canvas.width - 200 - i * 70, this.canvas.height - 150, 'red', true);
-                }
-                
-                if (this.region.level >= 2) {
-                    this.createUnit('tank', this.canvas.width - 300, this.canvas.height - 200, 'red', true);
-                }
+                // 🎯 وحدات العدو - تصميمات محسنة
+                this.createUnit('soldier', 600, 400, 'red');
+                this.createUnit('soldier', 680, 400, 'red');
+                this.createUnit('tank', 750, 350, 'red');
+                this.createUnit('aircraft', 650, 200, 'red');
             }
 
-            createUnit(type, x, y, team, free = false) {
-                const cost = this.getUnitCost(type);
-                if (!free && !this.canAfford(cost)) {
-                    showMessage('❌ موارد غير كافية!');
-                    return null;
-                }
-                if (!free) this.deductResources(cost);
-                
+            createUnit(type, x, y, team) {
                 const id = `unit_${Date.now()}_${Math.random()}`;
-                const unitConfig = {
-                    soldier: { health: 100, speed: 2, attack: 15, range: 60, attackSpeed: 1000 },
-                    tank: { health: 200, speed: 1, attack: 40, range: 200, attackSpeed: 2000 },
-                    aircraft: { health: 150, speed: 3, attack: 80, range: 300, attackSpeed: 3000, altitude: 50 }
-                };
-                
-                const config = unitConfig[type];
                 const unit = {
                     id, type, x, y, team,
-                    targetX: x, targetY: y - (type === 'aircraft' ? config.altitude : 0),
-                    health: config.health,
-                    maxHealth: config.health,
-                    speed: config.speed,
-                    attack: config.attack,
-                    range: config.range,
-                    attackSpeed: config.attackSpeed,
-                    lastAttack: 0,
-                    target: null,
-                    selected: false,
-                    isAttacking: false,
-                    altitude: type === 'aircraft' ? config.altitude : 0
+                    targetX: x, targetY: y,
+                    health: 100, maxHealth: 100,
+                    speed: 2,
+                    selected: false
                 };
                 
                 this.units.set(id, unit);
@@ -545,7 +210,12 @@
             }
 
             recruitUnit(unitType) {
-                this.createUnit(unitType, 150, this.canvas.height - 150, 'blue');
+                this.createUnit(unitType, 200, 400, 'blue');
+            }
+
+            start() {
+                this.setupEventListeners();
+                this.gameLoop();
             }
 
             setupEventListeners() {
@@ -559,19 +229,15 @@
                 
                 let clickedUnit = null;
                 for (const unit of this.units.values()) {
-                    const distance = Math.sqrt((unit.x - x) ** 2 + (unit.y - unit.altitude - y) ** 2);
-                    if (distance < 20) {
+                    const distance = Math.sqrt((unit.x - x) ** 2 + (unit.y - y) ** 2);
+                    if (distance < 25) {
                         clickedUnit = unit;
                         break;
                     }
                 }
                 
-                if (clickedUnit) {
-                    if (clickedUnit.team === 'blue') {
-                        this.selectUnit(clickedUnit);
-                    } else if (this.selectedUnits.length > 0) {
-                        this.attackUnit(clickedUnit);
-                    }
+                if (clickedUnit && clickedUnit.team === 'blue') {
+                    this.selectUnit(clickedUnit);
                 } else if (this.selectedUnits.length > 0) {
                     this.moveSelectedUnits(x, y);
                 }
@@ -588,182 +254,23 @@
                 this.selectedUnits = [];
             }
 
-            attackUnit(targetUnit) {
-                this.selectedUnits.forEach(unit => {
-                    unit.target = targetUnit;
-                    unit.isAttacking = true;
-                });
-            }
-
             moveSelectedUnits(x, y) {
                 this.selectedUnits.forEach(unit => {
-                    unit.targetX = x + (Math.random() * 60 - 30);
-                    unit.targetY = y - unit.altitude + (Math.random() * 60 - 30);
-                    unit.target = null;
-                    unit.isAttacking = false;
+                    unit.targetX = x;
+                    unit.targetY = y;
                 });
             }
 
             update() {
-                this.battleTime++;
-                this.updateUnits();
-                this.updateCombat();
-                this.updateBullets();
-                this.updateMissiles();
-                this.checkBattleEnd();
-            }
-
-            updateUnits() {
                 for (const unit of this.units.values()) {
-                    if (!unit.isAttacking || !unit.target) {
-                        const dx = unit.targetX - unit.x;
-                        const dy = unit.targetY - unit.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        
-                        if (distance > 2) {
-                            unit.x += (dx / distance) * Math.min(unit.speed, distance * 0.1);
-                            unit.y += (dy / distance) * Math.min(unit.speed, distance * 0.1);
-                        }
-                    }
-                }
-            }
-
-            updateCombat() {
-                const now = Date.now();
-                
-                // ذكاء الاصطناعي للعدو
-                if (this.enemyAggression > 0) {
-                    for (const enemy of this.units.values()) {
-                        if (enemy.team === 'red' && enemy.health > 0 && !enemy.isAttacking) {
-                            let closestTarget = null;
-                            let closestDistance = 200;
-                            
-                            for (const unit of this.units.values()) {
-                                if (unit.team === 'blue' && unit.health > 0) {
-                                    const distance = Math.sqrt((enemy.x - unit.x) ** 2 + (enemy.y - unit.y) ** 2);
-                                    if (distance < closestDistance) {
-                                        closestDistance = distance;
-                                        closestTarget = unit;
-                                    }
-                                }
-                            }
-                            
-                            if (closestTarget) {
-                                enemy.target = closestTarget;
-                                enemy.isAttacking = true;
-                            }
-                        }
-                    }
-                }
-                
-                // القتال
-                for (const unit of this.units.values()) {
-                    if (unit.isAttacking && unit.target && unit.health > 0) {
-                        const target = unit.target;
-                        if (target.health <= 0) {
-                            unit.isAttacking = false;
-                            unit.target = null;
-                            continue;
-                        }
-
-                        const distance = Math.sqrt((unit.x - target.x) ** 2 + (unit.y - target.y) ** 2);
-                        
-                        if (distance <= unit.range) {
-                            if (now - unit.lastAttack >= unit.attackSpeed) {
-                                if (unit.type === 'tank') {
-                                    this.createBullet(unit, target);
-                                } else if (unit.type === 'aircraft') {
-                                    this.createMissile(unit, target);
-                                }
-                                
-                                target.health -= unit.attack;
-                                unit.lastAttack = now;
-                                
-                                if (target.health <= 0) {
-                                    this.units.delete(target.id);
-                                    unit.isAttacking = false;
-                                    unit.target = null;
-                                }
-                            }
-                        } else {
-                            const dx = target.x - unit.x;
-                            const dy = target.y - unit.y;
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            unit.x += (dx / dist) * Math.min(unit.speed, dist * 0.1);
-                            unit.y += (dy / dist) * Math.min(unit.speed, dist * 0.1);
-                        }
-                    }
-                }
-            }
-
-            createBullet(fromUnit, toUnit) {
-                const bullet = {
-                    id: `bullet_${Date.now()}`,
-                    fromX: fromUnit.x,
-                    fromY: fromUnit.y - fromUnit.altitude,
-                    toX: toUnit.x,
-                    toY: toUnit.y - toUnit.altitude,
-                    progress: 0,
-                    speed: 0.05
-                };
-                this.bullets.push(bullet);
-            }
-
-            createMissile(fromUnit, toUnit) {
-                const missile = {
-                    id: `missile_${Date.now()}`,
-                    fromX: fromUnit.x,
-                    fromY: fromUnit.y - fromUnit.altitude,
-                    toX: toUnit.x,
-                    toY: toUnit.y,
-                    progress: 0,
-                    speed: 0.03
-                };
-                this.missiles.push(missile);
-            }
-
-            updateBullets() {
-                for (let i = this.bullets.length - 1; i >= 0; i--) {
-                    const bullet = this.bullets[i];
-                    bullet.progress += bullet.speed;
+                    const dx = unit.targetX - unit.x;
+                    const dy = unit.targetY - unit.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (bullet.progress >= 1) {
-                        this.bullets.splice(i, 1);
+                    if (distance > 2) {
+                        unit.x += (dx / distance) * Math.min(unit.speed, distance * 0.1);
+                        unit.y += (dy / distance) * Math.min(unit.speed, distance * 0.1);
                     }
-                }
-            }
-
-            updateMissiles() {
-                for (let i = this.missiles.length - 1; i >= 0; i--) {
-                    const missile = this.missiles[i];
-                    missile.progress += missile.speed;
-                    
-                    if (missile.progress >= 1) {
-                        this.missiles.splice(i, 1);
-                    }
-                }
-            }
-
-            checkBattleEnd() {
-                let blueUnits = 0, redUnits = 0;
-                
-                for (const unit of this.units.values()) {
-                    if (unit.health > 0) {
-                        if (unit.team === 'blue') blueUnits++;
-                        else redUnits++;
-                    }
-                }
-                
-                if (blueUnits === 0) {
-                    setTimeout(() => {
-                        showMessage('💔 انتهت المعركة! حاول مرة أخرى!');
-                        this.worldGame.returnToMap();
-                    }, 2000);
-                } else if (redUnits === 0) {
-                    setTimeout(() => {
-                        this.worldGame.winBattle(this.region);
-                        this.worldGame.returnToMap();
-                    }, 2000);
                 }
             }
 
@@ -772,40 +279,17 @@
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
                 this.drawGround();
-                this.drawBullets();
-                this.drawMissiles();
                 this.drawUnits();
-                this.drawBattleInfo();
             }
 
             drawGround() {
                 this.ctx.fillStyle = '#8B4513';
-                this.ctx.fillRect(0, this.canvas.height - 100, this.canvas.width, 100);
+                this.ctx.fillRect(0, 450, this.canvas.width, 150);
                 
+                // عشب
                 this.ctx.fillStyle = '#556B2F';
-                for (let i = 0; i < this.canvas.width; i += 40) {
-                    this.ctx.fillRect(i, this.canvas.height - 100, 20, 8);
-                }
-            }
-
-            drawBullets() {
-                this.ctx.fillStyle = '#f1c40f';
-                for (const bullet of this.bullets) {
-                    const x = bullet.fromX + (bullet.toX - bullet.fromX) * bullet.progress;
-                    const y = bullet.fromY + (bullet.toY - bullet.fromY) * bullet.progress;
-                    this.ctx.beginPath();
-                    this.ctx.arc(x, y, 3, 0, Math.PI * 2);
-                    this.ctx.fill();
-                }
-            }
-
-            drawMissiles() {
-                for (const missile of this.missiles) {
-                    const x = missile.fromX + (missile.toX - missile.fromX) * missile.progress;
-                    const y = missile.fromY + (missile.toY - missile.fromY) * missile.progress;
-                    
-                    this.ctx.fillStyle = '#ff0000';
-                    this.ctx.fillRect(x - 6, y - 2, 12, 4);
+                for (let i = 0; i < this.canvas.width; i += 30) {
+                    this.ctx.fillRect(i, 450, 15, 8);
                 }
             }
 
@@ -817,56 +301,170 @@
 
             drawUnit(unit) {
                 this.ctx.save();
-                this.ctx.translate(unit.x, unit.y - unit.altitude);
-                
-                this.ctx.fillStyle = unit.team === 'blue' ? '#3498db' : '#e74c3c';
+                this.ctx.translate(unit.x, unit.y);
                 
                 if (unit.type === 'soldier') {
-                    this.ctx.fillRect(-8, -12, 16, 24);
-                    this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
-                    this.ctx.fillRect(-6, -16, 12, 8);
+                    this.drawSoldier(unit);
                 } else if (unit.type === 'tank') {
-                    this.ctx.fillRect(-12, -8, 24, 16);
-                    this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
-                    this.ctx.fillRect(-4, -16, 8, 12);
+                    this.drawTank(unit);
                 } else if (unit.type === 'aircraft') {
-                    this.ctx.fillRect(-15, -6, 30, 12);
-                    this.ctx.fillRect(-10, -12, 20, 6);
-                    this.ctx.fillRect(-10, 6, 20, 6);
+                    this.drawAircraft(unit);
                 }
                 
+                // دائرة الاختيار
                 if (unit.selected) {
                     this.ctx.strokeStyle = '#f1c40f';
                     this.ctx.lineWidth = 2;
-                    this.ctx.setLineDash([5, 5]);
-                    this.ctx.strokeRect(-18, -18, 36, 36);
+                    this.ctx.setLineDash([5, 3]);
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, 28, 0, Math.PI * 2);
+                    this.ctx.stroke();
                     this.ctx.setLineDash([]);
                 }
                 
                 // شريط الصحة
-                const healthRatio = unit.health / unit.maxHealth;
-                this.ctx.fillStyle = '#e74c3c';
-                this.ctx.fillRect(-15, -22, 30, 4);
-                this.ctx.fillStyle = healthRatio > 0.6 ? '#2ecc71' : healthRatio > 0.3 ? '#f39c12' : '#e74c3c';
-                this.ctx.fillRect(-15, -22, 30 * healthRatio, 4);
+                this.drawHealthBar(unit);
                 
                 this.ctx.restore();
             }
 
-            drawBattleInfo() {
-                this.ctx.fillStyle = 'white';
-                this.ctx.font = '16px Arial';
+            drawSoldier(unit) {
+                const color = unit.team === 'blue' ? '#3498db' : '#e74c3c';
+                const darkColor = unit.team === 'blue' ? '#2980b9' : '#c0392b';
                 
-                let blueCount = 0, redCount = 0;
-                for (const unit of this.units.values()) {
-                    if (unit.health > 0) {
-                        if (unit.team === 'blue') blueCount++;
-                        else redCount++;
-                    }
+                // الجسم
+                this.ctx.fillStyle = color;
+                this.ctx.fillRect(-8, -15, 16, 25);
+                
+                // الرأس
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.beginPath();
+                this.ctx.arc(0, -20, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // الخوذة
+                this.ctx.fillStyle = darkColor;
+                this.ctx.beginPath();
+                this.ctx.arc(0, -20, 8, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // الساقين
+                this.ctx.fillStyle = darkColor;
+                this.ctx.fillRect(-6, 10, 4, 12);
+                this.ctx.fillRect(2, 10, 4, 12);
+                
+                // الذراعين
+                this.ctx.fillRect(-12, -10, 4, 15);
+                this.ctx.fillRect(8, -10, 4, 15);
+                
+                // السلاح
+                this.ctx.fillStyle = '#7f8c8d';
+                this.ctx.fillRect(8, -12, 12, 3);
+            }
+
+            drawTank(unit) {
+                const color = unit.team === 'blue' ? '#3498db' : '#e74c3c';
+                const darkColor = unit.team === 'blue' ? '#2980b9' : '#c0392b';
+                
+                // الجسم الرئيسي
+                this.ctx.fillStyle = color;
+                this.ctx.fillRect(-18, -10, 36, 20);
+                
+                // البرج
+                this.ctx.fillStyle = darkColor;
+                this.ctx.fillRect(-8, -20, 16, 15);
+                
+                // المدافع
+                this.ctx.fillStyle = '#2c3e50';
+                this.ctx.fillRect(0, -18, 25, 4);
+                
+                // المسارات
+                this.ctx.fillStyle = '#34495e';
+                this.ctx.fillRect(-20, 12, 40, 6);
+                this.ctx.fillRect(-20, -18, 40, 6);
+                
+                // العجلات
+                this.ctx.fillStyle = '#2c3e50';
+                for (let i = -15; i <= 15; i += 10) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(i, 15, 4, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.beginPath();
+                    this.ctx.arc(i, -15, 4, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+
+            drawAircraft(unit) {
+                const color = unit.team === 'blue' ? '#3498db' : '#e74c3c';
+                const darkColor = unit.team === 'blue' ? '#2980b9' : '#c0392b';
+                
+                // الجسم الرئيسي
+                this.ctx.fillStyle = color;
+                this.ctx.beginPath();
+                this.ctx.ellipse(0, 0, 20, 8, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // الأجنحة
+                this.ctx.fillRect(-25, -3, 50, 6);
+                
+                // الذيل
+                this.ctx.beginPath();
+                this.ctx.moveTo(15, 0);
+                this.ctx.lineTo(30, -8);
+                this.ctx.lineTo(30, 8);
+                this.ctx.closePath();
+                this.ctx.fill();
+                
+                // المحركات
+                this.ctx.fillStyle = darkColor;
+                this.ctx.beginPath();
+                this.ctx.arc(-12, 0, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.beginPath();
+                this.ctx.arc(12, 0, 4, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // قمرة القيادة
+                this.ctx.fillStyle = '#87CEEB';
+                this.ctx.beginPath();
+                this.ctx.arc(-5, 0, 5, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // تأثيرات المحركات
+                this.ctx.strokeStyle = '#f39c12';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(-16, 0);
+                this.ctx.lineTo(-25, 0);
+                this.ctx.stroke();
+                this.ctx.beginPath();
+                this.ctx.moveTo(16, 0);
+                this.ctx.lineTo(25, 0);
+                this.ctx.stroke();
+            }
+
+            drawHealthBar(unit) {
+                const healthRatio = unit.health / unit.maxHealth;
+                const barWidth = 35;
+                
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.ctx.fillRect(-barWidth/2, -35, barWidth, 6);
+                
+                if (healthRatio > 0.6) {
+                    this.ctx.fillStyle = '#2ecc71';
+                } else if (healthRatio > 0.3) {
+                    this.ctx.fillStyle = '#f39c12';
+                } else {
+                    this.ctx.fillStyle = '#e74c3c';
                 }
                 
-                this.ctx.fillText(`⏰ الوقت: ${Math.floor(this.battleTime/60)}ث | 👤 ${blueCount} | 🎯 ${redCount}`, 20, 30);
-                this.ctx.fillText(`🎯 الهدف: ${this.region.name}`, 20, 60);
+                this.ctx.fillRect(-barWidth/2, -35, barWidth * healthRatio, 6);
+                
+                // حدود شريط الصحة
+                this.ctx.strokeStyle = '#2c3e50';
+                this.ctx.lineWidth = 1;
+                this.ctx.strokeRect(-barWidth/2, -35, barWidth, 6);
             }
 
             gameLoop() {
@@ -874,45 +472,12 @@
                 this.render();
                 requestAnimationFrame(() => this.gameLoop());
             }
-
-            canAfford(cost) {
-                return this.resources.gold >= cost.gold && 
-                       this.resources.oil >= cost.oil && 
-                       this.resources.electricity >= cost.electricity;
-            }
-
-            deductResources(cost) {
-                this.resources.gold -= cost.gold;
-                this.resources.oil -= cost.oil;
-                this.resources.electricity -= cost.electricity;
-                this.worldGame.updateResourceDisplay();
-            }
-
-            getUnitCost(unitType) {
-                const costs = {
-                    soldier: { gold: 100, oil: 0, electricity: 0 },
-                    tank: { gold: 300, oil: 100, electricity: 0 },
-                    aircraft: { gold: 500, oil: 200, electricity: 100 }
-                };
-                return costs[unitType];
-            }
         }
 
-        // 🎯 تعديل حجم الشاشة
         window.addEventListener('resize', () => {
-            if (game) {
-                game.setupCanvases();
+            if (battle) {
+                battle.setupCanvas();
             }
-        });
-
-        // 🎮 اختصارات لوحة المفاتيح
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && currentView === 'battle') {
-                game.returnToMap();
-            }
-            if (e.key === '1' && currentView === 'battle') battle.recruitUnit('soldier');
-            if (e.key === '2' && currentView === 'battle') battle.recruitUnit('tank');
-            if (e.key === '3' && currentView === 'battle') battle.recruitUnit('aircraft');
         });
     </script>
 </body>
