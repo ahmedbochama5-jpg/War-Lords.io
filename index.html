@@ -275,6 +275,11 @@
             box-shadow: 0 0 10px #f1c40f;
         }
         
+        .enemy-bullet {
+            background: #e74c3c;
+            box-shadow: 0 0 10px #e74c3c;
+        }
+        
         .tank-explosion {
             position: absolute;
             width: 40px;
@@ -288,6 +293,20 @@
         @keyframes explode {
             0% { transform: scale(0); opacity: 1; }
             100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .alert-indicator {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #e74c3c;
+            border-radius: 50%;
+            animation: alertPulse 1s infinite;
+        }
+        
+        @keyframes alertPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.7; }
         }
         
         .controlsInfo {
@@ -322,7 +341,7 @@
         <div id="startScreen">
             <div class="titleContainer">
                 <div class="mainTitle">WAR LORDS</div>
-                <div class="subTitle">نظام دبابات بإطلاق النار من بعيد</div>
+                <div class="subTitle">العدو الذكي - يهاجم عند الاقتراب!</div>
             </div>
             
             <button class="startButton" onclick="startGame()">
@@ -330,11 +349,11 @@
             </button>
             
             <div class="controlsInfo">
-                <h3>🎯 الدبابات الجديدة</h3>
-                <div>• 🚜 الدبابة تطلق نيران من بعيد</div>
-                <div>• مدى إطلاق: 200 بكسل</div>
-                <div>• ضرر عالي لكن بطيئة الحركة</div>
-                <div>• تحتاج نفط بالإضافة للذهب</div>
+                <h3>🎯 تحذير: العدو الذكي</h3>
+                <div>• 🚨 العدو يهاجم تلقائياً عند الاقتراب</div>
+                <div>• 👁️ لديه مجال رؤية محدود</div>
+                <div>• 🎯 يختار الأهداف الأقرب</div>
+                <div>• 💥 دبابات العدو تطلق من بعيد أيضاً</div>
             </div>
         </div>
         
@@ -361,8 +380,8 @@
                 <button class="unit-btn" onclick="game.recruitUnit('tank')" id="tankBtn">
                     🚜 دبابة (300 ذهب، 100 نفط)
                 </button>
-                <div style="margin-top: 10px; font-size: 0.8em; color: #f1c40f;">
-                    الدبابة تطلق النار من بعيد!
+                <div style="margin-top: 10px; font-size: 0.8em; color: #e74c3c;">
+                    🚨 العدو يهاجم عند الاقتراب!
                 </div>
             </div>
             
@@ -373,6 +392,7 @@
                 <div>جنودنا: <span id="blueSoldiers">0</span></div>
                 <div>دباباتنا: <span id="blueTanks">0</span></div>
                 <div>العدو: <span id="redUnits">0</span></div>
+                <div>معارك نشطة: <span id="activeBattles">0</span></div>
             </div>
             
             <div id="performancePanel">
@@ -414,16 +434,15 @@
             }, 2000);
         }
 
-        function createBulletEffect(startX, startY, endX, endY) {
+        function createBulletEffect(startX, startY, endX, endY, isEnemy = false) {
             const bullet = document.createElement('div');
-            bullet.className = 'bullet';
+            bullet.className = isEnemy ? 'bullet enemy-bullet' : 'bullet';
             bullet.style.left = startX + 'px';
             bullet.style.top = startY + 'px';
             document.body.appendChild(bullet);
             
-            // حركة الرصاصة
             const startTime = Date.now();
-            const duration = 400; // مدة الحركة بالمللي ثانية
+            const duration = isEnemy ? 500 : 400;
             const distance = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
             
             function animateBullet() {
@@ -456,6 +475,20 @@
             setTimeout(() => {
                 document.body.removeChild(explosion);
             }, 500);
+        }
+
+        function createAlertIndicator(x, y) {
+            const alert = document.createElement('div');
+            alert.className = 'alert-indicator';
+            alert.style.left = (x - 7.5) + 'px';
+            alert.style.top = (y - 7.5) + 'px';
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (document.body.contains(alert)) {
+                    document.body.removeChild(alert);
+                }
+            }, 1000);
         }
 
         function startGame() {
@@ -501,6 +534,7 @@
                 
                 this.gameTime = 0;
                 this.lastRender = 0;
+                this.activeBattles = 0;
                 
                 this.createInitialUnits();
                 this.updateResourceDisplay();
@@ -551,12 +585,14 @@
                     maxHealth: type === 'soldier' ? 100 : 200,
                     speed: type === 'soldier' ? 2 : 1,
                     attack: type === 'soldier' ? 15 : 40,
-                    range: type === 'soldier' ? 40 : 200, // مدى أكبر للدبابة
-                    attackSpeed: type === 'soldier' ? 1000 : 2000, // أبطأ للدبابة
+                    range: type === 'soldier' ? 60 : 200,
+                    visionRange: type === 'soldier' ? 120 : 250, // مجال رؤية العدو
+                    attackSpeed: type === 'soldier' ? 1000 : 2000,
                     lastAttack: 0,
                     target: null,
                     selected: false,
-                    isAttacking: false
+                    isAttacking: false,
+                    lastTargetSearch: 0
                 };
                 
                 this.units.set(id, unit);
@@ -572,6 +608,7 @@
             }
 
             createBullet(fromUnit, toUnit) {
+                const isEnemy = fromUnit.team === 'red';
                 const bullet = {
                     id: `bullet_${Date.now()}`,
                     fromX: fromUnit.x,
@@ -587,7 +624,7 @@
                 this.bullets.push(bullet);
                 
                 // تأثير بصري لإطلاق النار
-                createBulletEffect(fromUnit.x, fromUnit.y, toUnit.x, toUnit.y);
+                createBulletEffect(fromUnit.x, fromUnit.y, toUnit.x, toUnit.y, isEnemy);
             }
 
             start() {
@@ -675,6 +712,57 @@
                 }
             }
 
+            updateEnemyAI() {
+                const now = Date.now();
+                let currentBattles = 0;
+
+                for (const enemy of this.units.values()) {
+                    if (enemy.team === 'red' && enemy.health > 0) {
+                        // البحث عن أهداف كل ثانية فقط لتحسين الأداء
+                        if (now - enemy.lastTargetSearch > 1000) {
+                            enemy.lastTargetSearch = now;
+                            
+                            // البحث عن أقرب عدو في مجال الرؤية
+                            let closestTarget = null;
+                            let closestDistance = enemy.visionRange;
+                            
+                            for (const unit of this.units.values()) {
+                                if (unit.team === 'blue' && unit.health > 0) {
+                                    const distance = Math.sqrt((enemy.x - unit.x) ** 2 + (enemy.y - unit.y) ** 2);
+                                    if (distance < closestDistance) {
+                                        closestDistance = distance;
+                                        closestTarget = unit;
+                                    }
+                                }
+                            }
+                            
+                            if (closestTarget) {
+                                enemy.target = closestTarget;
+                                enemy.isAttacking = true;
+                                enemy.targetX = closestTarget.x;
+                                enemy.targetY = closestTarget.y;
+                                
+                                // مؤشر إنذار
+                                if (Math.random() < 0.3) {
+                                    createAlertIndicator(enemy.x, enemy.y);
+                                }
+                            } else {
+                                enemy.target = null;
+                                enemy.isAttacking = false;
+                            }
+                        }
+
+                        // إذا كان العدو يهاجم، عدّ المعركة
+                        if (enemy.isAttacking && enemy.target) {
+                            currentBattles++;
+                        }
+                    }
+                }
+
+                this.activeBattles = currentBattles;
+                document.getElementById('activeBattles').textContent = this.activeBattles;
+            }
+
             updateCombat() {
                 const now = Date.now();
 
@@ -686,25 +774,26 @@
                         const distance = Math.sqrt((unit.x - target.x) ** 2 + (unit.y - target.y) ** 2);
                         
                         if (distance <= unit.range) {
-                            // الوحدة في مدى الهجوم
                             if (now - unit.lastAttack >= unit.attackSpeed) {
                                 if (unit.type === 'tank') {
-                                    // الدبابة تطلق رصاصة من بعيد
+                                    this.createBullet(unit, target);
+                                } else if (unit.team === 'red') {
+                                    // إطلاق نار العدو
                                     this.createBullet(unit, target);
                                 }
                                 
-                                // الهجوم العادي
                                 target.health -= unit.attack;
                                 unit.lastAttack = now;
                                 
                                 if (target.health <= 0) {
-                                    // الوحدة المستهدفة ماتت
                                     this.units.delete(target.id);
                                     this.player.score += target.team === 'red' ? 
                                         (target.type === 'soldier' ? 20 : 50) : 0;
-                                    showMessage(`💀 ${target.team === 'red' ? 'عدو' : 'صديق'} تم تدميره!`);
                                     
-                                    // إلغاء الهجوم على الهدف الميت
+                                    if (target.team === 'blue') {
+                                        showMessage(`💀 ${target.type === 'soldier' ? 'جندي' : 'دبابة'} فقدناه!`);
+                                    }
+                                    
                                     for (const u of this.units.values()) {
                                         if (u.target === target) {
                                             u.target = null;
@@ -715,12 +804,10 @@
                             }
                             
                             if (unit.type === 'soldier') {
-                                // الجنود يتحركون نحو الهدف
                                 unit.x += (target.x - unit.x) * 0.02;
                                 unit.y += (target.y - unit.y) * 0.02;
                             }
                         } else {
-                            // التحرك نحو الهدف للوصول إلى مدى الهجوم
                             const dx = target.x - unit.x;
                             const dy = target.y - unit.y;
                             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -730,7 +817,6 @@
                     }
                 }
 
-                // تحديث الرصاصات
                 this.updateBullets();
             }
 
@@ -740,7 +826,6 @@
                     bullet.progress += bullet.speed;
                     
                     if (bullet.progress >= 1) {
-                        // الرصاصة وصلت للهدف
                         const targetUnit = this.findUnitAt(bullet.toX, bullet.toY);
                         if (targetUnit && targetUnit.team !== bullet.team) {
                             targetUnit.health -= bullet.damage;
@@ -857,6 +942,7 @@
             }
 
             update() {
+                this.updateEnemyAI();
                 this.updateCombat();
                 
                 for (const unit of this.units.values()) {
@@ -884,6 +970,7 @@
                 this.drawGround();
                 this.drawBullets();
                 this.drawUnits();
+                this.drawVisionRanges();
             }
 
             drawGround() {
@@ -897,21 +984,31 @@
             }
 
             drawBullets() {
-                this.ctx.fillStyle = '#f1c40f';
                 for (const bullet of this.bullets) {
                     const x = bullet.fromX + (bullet.toX - bullet.fromX) * bullet.progress;
                     const y = bullet.fromY + (bullet.toY - bullet.fromY) * bullet.progress;
                     
+                    this.ctx.fillStyle = bullet.team === 'red' ? '#e74c3c' : '#f1c40f';
                     this.ctx.beginPath();
                     this.ctx.arc(x, y, 3, 0, Math.PI * 2);
                     this.ctx.fill();
                     
-                    // توهج الرصاصة
-                    this.ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+                    this.ctx.fillStyle = bullet.team === 'red' ? 'rgba(231, 76, 60, 0.3)' : 'rgba(241, 196, 15, 0.3)';
                     this.ctx.beginPath();
                     this.ctx.arc(x, y, 6, 0, Math.PI * 2);
                     this.ctx.fill();
-                    this.ctx.fillStyle = '#f1c40f';
+                }
+            }
+
+            drawVisionRanges() {
+                for (const unit of this.units.values()) {
+                    if (unit.team === 'red' && unit.isAttacking) {
+                        this.ctx.strokeStyle = 'rgba(231, 76, 60, 0.2)';
+                        this.ctx.lineWidth = 1;
+                        this.ctx.beginPath();
+                        this.ctx.arc(unit.x, unit.y, unit.visionRange, 0, Math.PI * 2);
+                        this.ctx.stroke();
+                    }
                 }
             }
 
@@ -925,31 +1022,26 @@
                 this.ctx.save();
                 this.ctx.translate(unit.x, unit.y);
                 
-                // لون الوحدة
                 this.ctx.fillStyle = unit.team === 'blue' ? '#3498db' : '#e74c3c';
                 this.ctx.strokeStyle = unit.selected ? '#f1c40f' : '#2c3e50';
                 this.ctx.lineWidth = unit.selected ? 3 : 2;
                 
-                // رسم شكل الوحدة
                 if (unit.type === 'soldier') {
                     this.ctx.fillRect(-8, -12, 16, 24);
                     this.ctx.strokeRect(-8, -12, 16, 24);
                     this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
                     this.ctx.fillRect(-6, -16, 12, 8);
                 } else {
-                    // دبابة
                     this.ctx.fillRect(-15, -10, 30, 20);
                     this.ctx.strokeRect(-15, -10, 30, 20);
                     this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
-                    this.ctx.fillRect(-5, -18, 10, 12); // برج
+                    this.ctx.fillRect(-5, -18, 10, 12);
                     
-                    // مدفع الدبابة
                     this.ctx.fillStyle = '#7f8c8d';
                     this.ctx.fillRect(0, -5, 20, 3);
                     
-                    // إذا كانت تهاجم، ارسم خط إطلاق النار
                     if (unit.isAttacking && unit.target) {
-                        this.ctx.strokeStyle = '#ff0000';
+                        this.ctx.strokeStyle = unit.team === 'blue' ? '#3498db' : '#e74c3c';
                         this.ctx.lineWidth = 1;
                         this.ctx.setLineDash([5, 3]);
                         this.ctx.beginPath();
@@ -961,7 +1053,6 @@
                     }
                 }
                 
-                // شريط الصحة التفصيلي
                 this.drawDetailedHealthBar(unit.health, unit.maxHealth, unit.team);
                 
                 this.ctx.restore();
@@ -972,11 +1063,9 @@
                 const height = 6;
                 const ratio = current / max;
                 
-                // خلفية شريط الصحة
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 this.ctx.fillRect(-width/2, -30, width, height);
                 
-                // شريط الصحة الملون
                 if (ratio > 0.6) {
                     this.ctx.fillStyle = team === 'blue' ? '#2ecc71' : '#e74c3c';
                 } else if (ratio > 0.3) {
@@ -987,7 +1076,6 @@
                 
                 this.ctx.fillRect(-width/2, -30, width * ratio, height);
                 
-                // حدود الشريط
                 this.ctx.strokeStyle = '#2c3e50';
                 this.ctx.lineWidth = 1;
                 this.ctx.strokeRect(-width/2, -30, width, height);
