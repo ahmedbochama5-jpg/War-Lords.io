@@ -1,503 +1,272 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>War Lords - إمبراطورية العالم</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<script>
+class BattleGame {
+    constructor(region, worldGame) {
+        this.region = region;
+        this.worldGame = worldGame;
+        this.canvas = document.getElementById('battleScreen');
+        this.ctx = this.canvas.getContext('2d');
+        this.units = new Map();
+        this.bullets = [];
+        this.selectedUnits = [];
         
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0c1a25, #1a3c2d);
-            color: white;
-            overflow: hidden;
-            height: 100vh;
-        }
-        
-        #gameContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        
-        #worldMap, #battleScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        
-        #worldMap {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            display: block;
-        }
-        
-        #battleScreen {
-            background: rgba(26, 60, 45, 0.95);
-            display: none;
-        }
-        
-        #startScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(12, 26, 37, 0.95) 0%, rgba(26, 60, 45, 0.9) 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .mainTitle {
-            font-size: 4em;
-            font-weight: bold;
-            background: linear-gradient(45deg, #e74c3c, #f1c40f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        
-        .startButton {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-            color: white;
-            border: none;
-            padding: 20px 50px;
-            font-size: 1.5em;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
-        }
-        
-        #uiOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        
-        #mapPanel, #resourcesPanel, #battlePanel {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            pointer-events: auto;
-        }
-        
-        #mapPanel {
-            top: 20px;
-            left: 20px;
-            border: 2px solid #3498db;
-            min-width: 300px;
-        }
-        
-        #resourcesPanel {
-            top: 20px;
-            right: 20px;
-            border: 2px solid #2ecc71;
-        }
-        
-        #battlePanel {
-            bottom: 20px;
-            left: 20px;
-            border: 2px solid #e74c3c;
-            display: none;
-        }
-        
-        button {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        
-        .region-info {
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-        }
-    </style>
-</head>
-<body>
-    <div id="gameContainer">
-        <div id="startScreen">
-            <div class="mainTitle">WAR LORDS</div>
-            <button class="startButton" onclick="startGame()">🚀 ابدأ اللعبة</button>
-        </div>
-        
-        <canvas id="worldMap"></canvas>
-        <canvas id="battleScreen"></canvas>
-        
-        <div id="uiOverlay">
-            <div id="mapPanel">
-                <h3>🗺️ إمبراطوريتك</h3>
-                <div id="regionsList"></div>
-                <button onclick="game.returnToMap()">🗺️ العودة للخريطة</button>
-            </div>
-            
-            <div id="resourcesPanel">
-                <h3>💰 الموارد</h3>
-                <div>الذهب: <span id="goldValue">1000</span></div>
-                <div>النفط: <span id="oilValue">500</span></div>
-            </div>
-            
-            <div id="battlePanel">
-                <h3>⚔️ المعركة</h3>
-                <button onclick="battle.recruitUnit('soldier')">🪖 جندي</button>
-                <button onclick="battle.recruitUnit('tank')">🚜 دبابة</button>
-            </div>
-        </div>
-    </div>
+        this.resources = {
+            gold: 1000,
+            oil: 500
+        };
 
-    <script>
-        // 🔥 المتغيرات العامة
-        let game, battle;
+        this.battleTime = 0; // وقت المعركة
+        this.enemyAggression = 0; // شراسة العدو
+    }
 
-        function startGame() {
-            document.getElementById('startScreen').style.display = 'none';
-            game = new WorldGame();
-            game.init();
+    start() {
+        this.createInitialUnits();
+        this.setupEventListeners();
+        this.gameLoop();
+    }
+
+    createInitialUnits() {
+        // 🎯 وحدات اللاعب - نزيدهم شوية
+        for (let i = 0; i < 5; i++) {
+            this.createUnit('soldier', 100 + i * 60, 400, 'blue', true);
+        }
+        
+        // 🎯 وحدات العدو - نبعدهم شوية ونقلل عددهم
+        for (let i = 0; i < 2; i++) {
+            this.createUnit('soldier', 700 + i * 80, 400, 'red', true);
         }
 
-        class WorldGame {
-            constructor() {
-                this.mapCanvas = document.getElementById('worldMap');
-                this.battleCanvas = document.getElementById('battleScreen');
-                this.mapCtx = this.mapCanvas.getContext('2d');
-                this.battleCtx = this.battleCanvas.getContext('2d');
-            }
+        // 🛡️ نعطي اللاعب وقت ليتحضر
+        setTimeout(() => {
+            this.startEnemyAI();
+        }, 3000);
+    }
 
-            init() {
-                this.setupCanvases();
-                this.createRegions();
-                this.setupEventListeners();
-                this.gameLoop();
-            }
+    startEnemyAI() {
+        // العدو يبدأ الهجوم بعد 3 ثواني
+        this.enemyAggression = 1;
+    }
 
-            setupCanvases() {
-                this.mapCanvas.width = window.innerWidth;
-                this.mapCanvas.height = window.innerHeight;
-                this.battleCanvas.width = window.innerWidth;
-                this.battleCanvas.height = window.innerHeight;
-            }
-
-            createRegions() {
-                this.regions = [
-                    { id: 'capital', name: 'العاصمة', x: 200, y: 300, owner: 'player', level: 1 },
-                    { id: 'forest', name: 'الغابة', x: 400, y: 200, owner: 'neutral', level: 1 },
-                    { id: 'mountains', name: 'الجبال', x: 600, y: 400, owner: 'enemy', level: 1 }
-                ];
-            }
-
-            setupEventListeners() {
-                this.mapCanvas.addEventListener('click', (e) => {
-                    const rect = this.mapCanvas.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
+    updateCombat() {
+        const now = Date.now();
+        this.battleTime++;
+        
+        // 🎯 العدو يهاجم فقط إذا كان عدواني
+        if (this.enemyAggression > 0) {
+            for (const enemy of this.units.values()) {
+                if (enemy.team === 'red' && enemy.health > 0 && !enemy.isAttacking) {
+                    // يبحث عن أقرب وحدة صديقة
+                    let closestTarget = null;
+                    let closestDistance = Infinity;
                     
-                    this.regions.forEach(region => {
-                        const distance = Math.sqrt((x - region.x) ** 2 + (y - region.y) ** 2);
-                        if (distance < 50 && region.owner !== 'player') {
-                            this.startBattle(region);
-                        }
-                    });
-                });
-            }
-
-            startBattle(region) {
-                // 🔄 الانتقال لشاشة المعركة
-                this.mapCanvas.style.display = 'none';
-                this.battleCanvas.style.display = 'block';
-                document.getElementById('battlePanel').style.display = 'block';
-                
-                // 🎮 بدء المعركة
-                battle = new BattleGame(region, this);
-                battle.start();
-            }
-
-            returnToMap() {
-                this.mapCanvas.style.display = 'block';
-                this.battleCanvas.style.display = 'none';
-                document.getElementById('battlePanel').style.display = 'none';
-            }
-
-            renderMap() {
-                this.mapCtx.fillStyle = '#1a3c2d';
-                this.mapCtx.fillRect(0, 0, this.mapCanvas.width, this.mapCanvas.height);
-                
-                this.regions.forEach(region => {
-                    this.drawRegion(region);
-                });
-            }
-
-            drawRegion(region) {
-                const color = region.owner === 'player' ? '#3498db' : 
-                             region.owner === 'enemy' ? '#e74c3c' : '#f1c40f';
-                
-                this.mapCtx.fillStyle = color;
-                this.mapCtx.beginPath();
-                this.mapCtx.arc(region.x, region.y, 40, 0, Math.PI * 2);
-                this.mapCtx.fill();
-                
-                this.mapCtx.fillStyle = 'white';
-                this.mapCtx.font = '14px Arial';
-                this.mapCtx.fillText(region.name, region.x - 30, region.y + 60);
-            }
-
-            gameLoop() {
-                this.renderMap();
-                requestAnimationFrame(() => this.gameLoop());
-            }
-        }
-
-        // 🎯 نظام المعارك الكامل
-        class BattleGame {
-            constructor(region, worldGame) {
-                this.region = region;
-                this.worldGame = worldGame;
-                this.canvas = document.getElementById('battleScreen');
-                this.ctx = this.canvas.getContext('2d');
-                this.units = new Map();
-                this.bullets = [];
-                this.selectedUnits = [];
-                
-                this.resources = {
-                    gold: 1000,
-                    oil: 500
-                };
-            }
-
-            start() {
-                this.createInitialUnits();
-                this.setupEventListeners();
-                this.gameLoop();
-            }
-
-            createInitialUnits() {
-                // وحدات اللاعب
-                for (let i = 0; i < 3; i++) {
-                    this.createUnit('soldier', 100 + i * 80, 400, 'blue', true);
-                }
-                
-                // وحدات العدو
-                for (let i = 0; i < 3; i++) {
-                    this.createUnit('soldier', 600 + i * 80, 400, 'red', true);
-                }
-            }
-
-            createUnit(type, x, y, team, free = false) {
-                const cost = this.getUnitCost(type);
-                if (!free && !this.canAfford(cost)) return null;
-                if (!free) this.deductResources(cost);
-                
-                const id = `unit_${Date.now()}`;
-                const unit = {
-                    id, type, x, y, team,
-                    targetX: x, targetY: y,
-                    health: 100, maxHealth: 100,
-                    speed: 2, attack: 15, range: 60,
-                    attackSpeed: 1000, lastAttack: 0,
-                    selected: false, isAttacking: false, target: null
-                };
-                
-                this.units.set(id, unit);
-                return unit;
-            }
-
-            recruitUnit(unitType) {
-                this.createUnit(unitType, 100, 400, 'blue');
-            }
-
-            setupEventListeners() {
-                this.canvas.addEventListener('click', (e) => this.handleClick(e));
-            }
-
-            handleClick(e) {
-                const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                // البحث عن وحدة منقورة
-                let clickedUnit = null;
-                for (const unit of this.units.values()) {
-                    const distance = Math.sqrt((unit.x - x) ** 2 + (unit.y - y) ** 2);
-                    if (distance < 20 && unit.team === 'blue') {
-                        clickedUnit = unit;
-                        break;
-                    }
-                }
-                
-                if (clickedUnit) {
-                    this.selectUnit(clickedUnit);
-                } else if (this.selectedUnits.length > 0) {
-                    this.moveSelectedUnits(x, y);
-                }
-            }
-
-            selectUnit(unit) {
-                this.clearSelection();
-                unit.selected = true;
-                this.selectedUnits.push(unit);
-            }
-
-            clearSelection() {
-                this.selectedUnits.forEach(unit => unit.selected = false);
-                this.selectedUnits = [];
-            }
-
-            moveSelectedUnits(x, y) {
-                this.selectedUnits.forEach(unit => {
-                    unit.targetX = x;
-                    unit.targetY = y;
-                    unit.isAttacking = false;
-                    unit.target = null;
-                });
-            }
-
-            update() {
-                // تحديث حركة الوحدات
-                for (const unit of this.units.values()) {
-                    this.updateUnit(unit);
-                }
-                
-                // تحديث القتال
-                this.updateCombat();
-                
-                // تحديث الرصاصات
-                this.updateBullets();
-                
-                // التحقق من نهاية المعركة
-                this.checkBattleEnd();
-            }
-
-            updateUnit(unit) {
-                const dx = unit.targetX - unit.x;
-                const dy = unit.targetY - unit.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance > 2) {
-                    unit.x += (dx / distance) * Math.min(unit.speed, distance * 0.1);
-                    unit.y += (dy / distance) * Math.min(unit.speed, distance * 0.1);
-                }
-            }
-
-            updateCombat() {
-                const now = Date.now();
-                
-                for (const unit of this.units.values()) {
-                    if (unit.isAttacking && unit.target && unit.health > 0) {
-                        const target = unit.target;
-                        const distance = Math.sqrt((unit.x - target.x) ** 2 + (unit.y - target.y) ** 2);
-                        
-                        if (distance <= unit.range && now - unit.lastAttack >= unit.attackSpeed) {
-                            target.health -= unit.attack;
-                            unit.lastAttack = now;
-                            
-                            if (target.health <= 0) {
-                                this.units.delete(target.id);
+                    for (const unit of this.units.values()) {
+                        if (unit.team === 'blue' && unit.health > 0) {
+                            const distance = Math.sqrt((enemy.x - unit.x) ** 2 + (enemy.y - unit.y) ** 2);
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                                closestTarget = unit;
                             }
                         }
                     }
-                }
-            }
-
-            updateBullets() {
-                // ... (نظام الرصاصات)
-            }
-
-            checkBattleEnd() {
-                let blueUnits = 0, redUnits = 0;
-                
-                for (const unit of this.units.values()) {
-                    if (unit.health > 0) {
-                        if (unit.team === 'blue') blueUnits++;
-                        else redUnits++;
+                    
+                    if (closestTarget && closestDistance < 200) { // مدى رؤية العدو
+                        enemy.target = closestTarget;
+                        enemy.isAttacking = true;
                     }
                 }
-                
-                if (blueUnits === 0) {
-                    alert('💔 هزمت في المعركة!');
-                    this.worldGame.returnToMap();
-                } else if (redUnits === 0) {
-                    alert('🎉 انتصرت! المنطقة الآن تحت سيطرتك!');
-                    this.region.owner = 'player';
-                    this.worldGame.returnToMap();
-                }
-            }
-
-            render() {
-                this.ctx.fillStyle = '#1a3c2d';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // رسم الأرض
-                this.ctx.fillStyle = '#8B4513';
-                this.ctx.fillRect(0, 450, this.canvas.width, 150);
-                
-                // رسم الوحدات
-                for (const unit of this.units.values()) {
-                    this.drawUnit(unit);
-                }
-            }
-
-            drawUnit(unit) {
-                this.ctx.fillStyle = unit.team === 'blue' ? '#3498db' : '#e74c3c';
-                this.ctx.fillRect(unit.x - 8, unit.y - 12, 16, 24);
-                
-                if (unit.selected) {
-                    this.ctx.strokeStyle = '#f1c40f';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.strokeRect(unit.x - 12, unit.y - 16, 24, 32);
-                }
-                
-                // شريط الصحة
-                const healthRatio = unit.health / unit.maxHealth;
-                this.ctx.fillStyle = '#e74c3c';
-                this.ctx.fillRect(unit.x - 10, unit.y - 20, 20, 3);
-                this.ctx.fillStyle = '#2ecc71';
-                this.ctx.fillRect(unit.x - 10, unit.y - 20, 20 * healthRatio, 3);
-            }
-
-            gameLoop() {
-                this.update();
-                this.render();
-                requestAnimationFrame(() => this.gameLoop());
-            }
-
-            canAfford(cost) {
-                return this.resources.gold >= cost.gold && this.resources.oil >= cost.oil;
-            }
-
-            deductResources(cost) {
-                this.resources.gold -= cost.gold;
-                this.resources.oil -= cost.oil;
-            }
-
-            getUnitCost(unitType) {
-                return unitType === 'soldier' ? 
-                    { gold: 100, oil: 0 } : { gold: 300, oil: 100 };
             }
         }
+        
+        // 🎯 نظام القتال الأساسي
+        for (const unit of this.units.values()) {
+            if (unit.isAttacking && unit.target && unit.health > 0) {
+                const target = unit.target;
+                if (target.health <= 0) {
+                    unit.isAttacking = false;
+                    unit.target = null;
+                    continue;
+                }
 
-        // 🔧 تعديل حجم النوافذ
-        window.addEventListener('resize', () => {
-            if (game) {
-                game.setupCanvases();
+                const distance = Math.sqrt((unit.x - target.x) ** 2 + (unit.y - target.y) ** 2);
+                
+                if (distance <= unit.range) {
+                    if (now - unit.lastAttack >= unit.attackSpeed) {
+                        target.health -= unit.attack;
+                        unit.lastAttack = now;
+                        
+                        if (target.health <= 0) {
+                            this.units.delete(target.id);
+                            unit.isAttacking = false;
+                            unit.target = null;
+                        }
+                    }
+                } else {
+                    // التحرك نحو الهدف
+                    const dx = target.x - unit.x;
+                    const dy = target.y - unit.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    unit.x += (dx / dist) * Math.min(unit.speed, dist * 0.1);
+                    unit.y += (dy / dist) * Math.min(unit.speed, dist * 0.1);
+                }
             }
-        });
-    </script>
-</body>
-</html>
+        }
+    }
+
+    checkBattleEnd() {
+        let blueUnits = 0, redUnits = 0;
+        
+        for (const unit of this.units.values()) {
+            if (unit.health > 0) {
+                if (unit.team === 'blue') blueUnits++;
+                else redUnits++;
+            }
+        }
+        
+        if (blueUnits === 0) {
+            setTimeout(() => {
+                alert('💔 انتهت المعركة! وحداتك دمرت جميعاً!\n\n💡 نصيحة: حاول تجنيد المزيد من الجنود واستخدم التكتيكات!');
+                this.worldGame.returnToMap();
+            }, 1000);
+        } else if (redUnits === 0) {
+            setTimeout(() => {
+                alert(`🎉 انتصرت! ${this.region.name} الآن تحت سيطرتك!\n\n🏆 +${this.region.level * 100} نقطة`);
+                this.region.owner = 'player';
+                this.worldGame.returnToMap();
+            }, 1000);
+        }
+    }
+
+    handleClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // 🔍 البحث عن وحدة منقورة
+        let clickedUnit = null;
+        for (const unit of this.units.values()) {
+            const distance = Math.sqrt((unit.x - x) ** 2 + (unit.y - y) ** 2);
+            if (distance < 20) {
+                clickedUnit = unit;
+                break;
+            }
+        }
+        
+        if (clickedUnit) {
+            if (clickedUnit.team === 'blue') {
+                this.selectUnit(clickedUnit);
+            } else if (this.selectedUnits.length > 0) {
+                // ⚔️ الهجوم على العدو
+                this.selectedUnits.forEach(unit => {
+                    unit.target = clickedUnit;
+                    unit.isAttacking = true;
+                });
+            }
+        } else if (this.selectedUnits.length > 0) {
+            // 🚀 تحريك الوحدات
+            this.moveSelectedUnits(x, y);
+        }
+    }
+
+    render() {
+        this.ctx.fillStyle = '#1a3c2d';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 🎨 رسم الأرض
+        this.ctx.fillStyle = '#8B4513';
+        this.ctx.fillRect(0, 450, this.canvas.width, 150);
+        
+        // 🎯 رسم خطوط المساعدة
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.canvas.width / 2, 0);
+        this.ctx.lineTo(this.canvas.width / 2, this.canvas.height);
+        this.ctx.stroke();
+        
+        // 🎯 رسم الوحدات
+        for (const unit of this.units.values()) {
+            this.drawUnit(unit);
+        }
+        
+        // 🎯 رسم معلومات المعركة
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText(`⏰ وقت المعركة: ${Math.floor(this.battleTime / 60)} ثانية`, 20, 30);
+        
+        let blueCount = 0, redCount = 0;
+        for (const unit of this.units.values()) {
+            if (unit.health > 0) {
+                if (unit.team === 'blue') blueCount++;
+                else redCount++;
+            }
+        }
+        this.ctx.fillText(`👤 وحداتك: ${blueCount} | 🎯 العدو: ${redCount}`, 20, 60);
+    }
+
+    drawUnit(unit) {
+        this.ctx.save();
+        this.ctx.translate(unit.x, unit.y);
+        
+        // 🎨 لون الوحدة
+        this.ctx.fillStyle = unit.team === 'blue' ? '#3498db' : '#e74c3c';
+        
+        if (unit.type === 'soldier') {
+            this.ctx.fillRect(-8, -12, 16, 24);
+            
+            // 🎨 رأس الجندي
+            this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
+            this.ctx.fillRect(-6, -16, 12, 8);
+        } else if (unit.type === 'tank') {
+            this.ctx.fillRect(-12, -8, 24, 16);
+            this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
+            this.ctx.fillRect(-4, -16, 8, 12);
+        }
+        
+        // 🛡️ تحديد الوحدة المختارة
+        if (unit.selected) {
+            this.ctx.strokeStyle = '#f1c40f';
+            this.ctx.lineWidth = 2;
+            this.ctx.setLineDash([5, 5]);
+            this.ctx.strokeRect(-15, -18, 30, 30);
+            this.ctx.setLineDash([]);
+        }
+        
+        // ❤️ شريط الصحة
+        const healthRatio = unit.health / unit.maxHealth;
+        this.ctx.fillStyle = '#e74c3c';
+        this.ctx.fillRect(-15, -25, 30, 4);
+        this.ctx.fillStyle = healthRatio > 0.6 ? '#2ecc71' : healthRatio > 0.3 ? '#f39c12' : '#e74c3c';
+        this.ctx.fillRect(-15, -25, 30 * healthRatio, 4);
+        
+        this.ctx.restore();
+    }
+
+    // 🎯 بقية الدوال تبقى كما هي...
+    updateUnit(unit) {
+        if (!unit.isAttacking || !unit.target) {
+            const dx = unit.targetX - unit.x;
+            const dy = unit.targetY - unit.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 2) {
+                unit.x += (dx / distance) * Math.min(unit.speed, distance * 0.1);
+                unit.y += (dy / distance) * Math.min(unit.speed, distance * 0.1);
+            }
+        }
+    }
+
+    update() {
+        for (const unit of this.units.values()) {
+            this.updateUnit(unit);
+        }
+        
+        this.updateCombat();
+        this.checkBattleEnd();
+    }
+
+    gameLoop() {
+        this.update();
+        this.render();
+        requestAnimationFrame(() => this.gameLoop());
+    }
+}
+</script>
