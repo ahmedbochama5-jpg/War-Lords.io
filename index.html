@@ -59,7 +59,7 @@
         
         #gameCanvas {
             background: rgba(26, 60, 45, 0.95);
-            display: none; /* مخفي حتى بداية اللعبة */
+            display: none;
             cursor: crosshair;
             box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
         }
@@ -149,7 +149,7 @@
             left: 100%;
         }
         
-        /* لوحة التحكم */
+        /* واجهة اللعبة */
         #uiOverlay {
             position: absolute;
             top: 0;
@@ -157,7 +157,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            display: none; /* مخفي حتى بداية اللعبة */
+            display: none;
         }
         
         #resourcesPanel {
@@ -234,15 +234,21 @@
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
         }
         
+        button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
         .unit-btn {
             background: linear-gradient(45deg, #3498db, #2980b9);
         }
         
-        .unit-btn:hover {
+        .unit-btn:hover:not(:disabled) {
             background: linear-gradient(45deg, #2980b9, #3498db);
         }
         
-        /* معلومات الأداء */
         #performancePanel {
             position: absolute;
             top: 10px;
@@ -255,7 +261,26 @@
             backdrop-filter: blur(5px);
         }
         
-        /* تعليمات التحكم */
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            border: 2px solid #e74c3c;
+            z-index: 2000;
+            text-align: center;
+            animation: fadeInOut 2s ease-in-out;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translate(-50%, -60%); }
+            20%, 80% { opacity: 1; transform: translate(-50%, -50%); }
+        }
+        
         .controlsInfo {
             background: rgba(52, 152, 219, 0.1);
             padding: 20px;
@@ -282,11 +307,9 @@
     </style>
 </head>
 <body>
-    <!-- الخلفية المتحركة -->
     <div id="animatedBackground"></div>
     
     <div id="gameContainer">
-        <!-- شاشة البداية -->
         <div id="startScreen">
             <div class="titleContainer">
                 <div class="mainTitle">WAR LORDS</div>
@@ -305,16 +328,13 @@
                     <span class="key">3</span> ثكنة
                 </div>
                 <div>
-                    <span class="key">Q</span> هجوم - 
-                    <span class="key">مسافة</span> موارد - 
-                    <span class="key">ESC</span> إلغاء
+                    <span class="key">نقرة زر الفأرة</span> لتحريك الوحدات
                 </div>
             </div>
         </div>
         
         <canvas id="gameCanvas"></canvas>
         
-        <!-- واجهة اللعبة (تظهر بعد البداية) -->
         <div id="uiOverlay">
             <div id="resourcesPanel">
                 <h3>💰 الموارد</h3>
@@ -326,21 +346,17 @@
                     <div class="resource-icon oil"></div>
                     <span>النفط: <span id="oilValue">500</span></span>
                 </div>
-                <div class="resource">
-                    <div class="resource-icon electricity"></div>
-                    <span>الكهرباء: <span id="electricityValue">200</span></span>
-                </div>
             </div>
             
             <div id="unitPanel">
                 <h3>🎯 الوحدات</h3>
-                <button class="unit-btn" onclick="game.recruitUnit('soldier')">
+                <button class="unit-btn" onclick="game.recruitUnit('soldier')" id="soldierBtn">
                     🪖 جندي (100 ذهب)
                 </button>
-                <button class="unit-btn" onclick="game.recruitUnit('tank')">
+                <button class="unit-btn" onclick="game.recruitUnit('tank')" id="tankBtn">
                     🚜 دبابة (300 ذهب، 100 نفط)
                 </button>
-                <button onclick="game.buildStructure('barracks')">
+                <button onclick="game.buildStructure('barracks')" id="barracksBtn">
                     ⚒️ ثكنة (500 ذهب)
                 </button>
                 <button onclick="game.attackMove()">
@@ -350,20 +366,18 @@
             
             <div id="gameInfo">
                 <h3>🏆 معلومات اللعبة</h3>
-                <div>اللاعبون: <span id="playerCount">1</span></div>
                 <div>النقاط: <span id="scoreValue">0</span></div>
                 <div>الوقت: <span id="gameTime">00:00</span></div>
+                <div>الوحدات: <span id="unitsCount">3</span></div>
             </div>
             
             <div id="performancePanel">
-                FPS: <span id="fpsCounter">60</span> | 
-                الوحدات: <span id="unitsCounter">0</span>
+                FPS: <span id="fpsCounter">60</span>
             </div>
         </div>
     </div>
 
     <script>
-        // إنشاء الجسيمات العائمة للخلفية
         function createFloatingParticles() {
             const background = document.getElementById('animatedBackground');
             for (let i = 0; i < 15; i++) {
@@ -384,13 +398,22 @@
             }
         }
 
-        // بدء اللعبة
+        function showMessage(text) {
+            const message = document.createElement('div');
+            message.className = 'message';
+            message.textContent = text;
+            document.body.appendChild(message);
+            
+            setTimeout(() => {
+                document.body.removeChild(message);
+            }, 2000);
+        }
+
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameCanvas').style.display = 'block';
             document.getElementById('uiOverlay').style.display = 'block';
             
-            // تهيئة اللعبة
             game = new WarLordsGame();
             game.start();
         }
@@ -411,40 +434,43 @@
 
             initGame() {
                 this.units = new Map();
-                this.buildings = new Map();
+                this.selectedUnits = [];
                 this.performance = {
                     fps: 0,
                     frameCount: 0,
-                    lastFpsUpdate: 0,
-                    units: 0
+                    lastFpsUpdate: 0
                 };
                 
                 this.player = {
                     resources: {
                         gold: 1000,
-                        oil: 500,
-                        electricity: 200
+                        oil: 500
                     },
                     score: 0
                 };
                 
                 this.gameTime = 0;
                 this.lastRender = 0;
+                
+                // إنشاء الوحدات الأولية فقط
                 this.createInitialUnits();
                 this.updateResourceDisplay();
+                this.updateButtons();
                 
                 setInterval(() => this.updatePerformance(), 1000);
                 setInterval(() => {
-                    this.player.resources.gold += 10;
-                    this.player.resources.oil += 5;
+                    // موارد تدريجية فقط، بدون إضافة مجانية
+                    this.player.resources.gold += 5;
+                    this.player.resources.oil += 2;
                     this.updateResourceDisplay();
+                    this.updateButtons();
                     this.gameTime++;
                     this.updateGameTime();
-                }, 1000);
+                }, 3000); // موارد كل 3 ثواني بدل 1 ثانية
             }
 
             createInitialUnits() {
-                // وحدات اللاعب
+                // وحدات اللاعب الأولية فقط
                 for (let i = 0; i < 3; i++) {
                     this.createUnit('soldier', 150 + i * 80, this.canvas.height - 150, 'blue');
                 }
@@ -455,17 +481,34 @@
                 }
             }
 
-            createUnit(type, x, y, team) {
+            createUnit(type, x, y, team, free = false) {
+                if (!free && team === 'blue') {
+                    const cost = this.getUnitCost(type);
+                    if (!this.canAfford(cost)) {
+                        showMessage('❌ موارد غير كافية!');
+                        return null;
+                    }
+                    this.deductResources(cost);
+                }
+                
                 const id = `unit_${Date.now()}_${Math.random()}`;
                 const unit = {
                     id, type, x, y, team,
                     targetX: x, targetY: y,
                     health: 100, maxHealth: 100,
-                    speed: 2 + Math.random(),
+                    speed: type === 'soldier' ? 2 : 1,
                     selected: false
                 };
                 
                 this.units.set(id, unit);
+                this.updateUnitsCount();
+                this.updateButtons();
+                
+                if (team === 'blue' && !free) {
+                    this.player.score += 10;
+                    showMessage(`✅ تم تجنيد ${type === 'soldier' ? 'جندي' : 'دبابة'}`);
+                }
+                
                 return unit;
             }
 
@@ -475,6 +518,7 @@
             }
 
             setupEventListeners() {
+                // النقر لتحريك الوحدات فقط، ليس لإضافة وحدات
                 this.canvas.addEventListener('click', (e) => this.handleClick(e));
                 
                 document.addEventListener('keydown', (e) => {
@@ -483,7 +527,6 @@
                         case '2': this.recruitUnit('tank'); break;
                         case '3': this.buildStructure('barracks'); break;
                         case 'q': case 'Q': this.attackMove(); break;
-                        case ' ': this.addResources(); break;
                     }
                 });
             }
@@ -493,17 +536,22 @@
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
                 
-                // إضافة وحدة عند النقر
-                this.createUnit('soldier', x, y, 'blue');
+                // تحريك الوحدات المختارة فقط
+                if (this.selectedUnits.length > 0) {
+                    this.moveSelectedUnits(x, y);
+                }
+            }
+
+            moveSelectedUnits(x, y) {
+                this.selectedUnits.forEach(unit => {
+                    unit.targetX = x + (Math.random() * 60 - 30);
+                    unit.targetY = y + (Math.random() * 60 - 30);
+                });
+                showMessage('🚀 الوحدات تتحرك إلى الهدف');
             }
 
             recruitUnit(unitType) {
-                const cost = this.getUnitCost(unitType);
-                if (this.canAfford(cost)) {
-                    this.deductResources(cost);
-                    this.createUnit(unitType, 200, this.canvas.height - 150, 'blue');
-                    this.player.score += 10;
-                }
+                this.createUnit(unitType, 200, this.canvas.height - 150, 'blue');
             }
 
             buildStructure(structureType) {
@@ -511,18 +559,19 @@
                 if (this.canAfford(cost)) {
                     this.deductResources(cost);
                     this.player.score += 50;
+                    showMessage('✅ تم بناء الثكنة');
+                    this.updateButtons();
+                } else {
+                    showMessage('❌ موارد غير كافية لبناء الثكنة!');
                 }
             }
 
             attackMove() {
-                // تنفيذ أمر الهجوم
-                console.log('وضع الهجوم مفعل');
-            }
-
-            addResources() {
-                this.player.resources.gold += 100;
-                this.player.resources.oil += 50;
-                this.updateResourceDisplay();
+                if (this.selectedUnits.length > 0) {
+                    showMessage('⚔️ وضع الهجوم مفعل للوحدات المختارة');
+                } else {
+                    showMessage('⚠️ يرجى اختيار وحدات أولاً');
+                }
             }
 
             canAfford(cost) {
@@ -548,8 +597,25 @@
             updateResourceDisplay() {
                 document.getElementById('goldValue').textContent = this.player.resources.gold;
                 document.getElementById('oilValue').textContent = this.player.resources.oil;
-                document.getElementById('electricityValue').textContent = this.player.resources.electricity;
                 document.getElementById('scoreValue').textContent = this.player.score;
+            }
+
+            updateButtons() {
+                const soldierCost = this.getUnitCost('soldier');
+                const tankCost = this.getUnitCost('tank');
+                const barracksCost = this.getStructureCost('barracks');
+                
+                document.getElementById('soldierBtn').disabled = !this.canAfford(soldierCost);
+                document.getElementById('tankBtn').disabled = !this.canAfford(tankCost);
+                document.getElementById('barracksBtn').disabled = !this.canAfford(barracksCost);
+            }
+
+            updateUnitsCount() {
+                let blueUnits = 0;
+                for (const unit of this.units.values()) {
+                    if (unit.team === 'blue') blueUnits++;
+                }
+                document.getElementById('unitsCount').textContent = blueUnits;
             }
 
             updateGameTime() {
@@ -562,7 +628,7 @@
             gameLoop(currentTime = 0) {
                 const deltaTime = currentTime - this.lastRender;
                 
-                if (deltaTime >= 16) { // ~60 FPS
+                if (deltaTime >= 16) {
                     this.update();
                     this.render();
                     this.lastRender = currentTime;
@@ -590,14 +656,10 @@
             }
 
             render() {
-                // مسح الشاشة
                 this.ctx.fillStyle = 'rgba(26, 60, 45, 0.9)';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // رسم الأرض
                 this.drawGround();
-                
-                // رسم الوحدات
                 this.drawUnits();
             }
 
@@ -625,14 +687,19 @@
                 this.ctx.strokeStyle = unit.selected ? '#f1c40f' : '#2c3e50';
                 this.ctx.lineWidth = 2;
                 
-                this.ctx.fillRect(-8, -12, 16, 24);
-                this.ctx.strokeRect(-8, -12, 16, 24);
-                
-                this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
-                this.ctx.fillRect(-6, -16, 12, 8);
+                if (unit.type === 'soldier') {
+                    this.ctx.fillRect(-8, -12, 16, 24);
+                    this.ctx.strokeRect(-8, -12, 16, 24);
+                    this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
+                    this.ctx.fillRect(-6, -16, 12, 8);
+                } else {
+                    this.ctx.fillRect(-12, -8, 24, 16);
+                    this.ctx.strokeRect(-12, -8, 24, 16);
+                    this.ctx.fillStyle = unit.team === 'blue' ? '#2980b9' : '#c0392b';
+                    this.ctx.fillRect(-4, -16, 8, 12);
+                }
                 
                 this.drawHealthBar(unit.health, unit.maxHealth);
-                
                 this.ctx.restore();
             }
 
@@ -653,22 +720,17 @@
                 const elapsed = now - this.performance.lastFpsUpdate;
                 
                 this.performance.fps = Math.round((this.performance.frameCount * 1000) / elapsed);
-                this.performance.units = this.units.size;
                 this.performance.lastFpsUpdate = now;
                 this.performance.frameCount = 0;
                 
                 document.getElementById('fpsCounter').textContent = this.performance.fps;
-                document.getElementById('unitsCounter').textContent = this.performance.units;
-                document.getElementById('playerCount').textContent = '1';
             }
         }
 
-        // تهيئة الخلفية عند تحميل الصفحة
         window.addEventListener('load', () => {
             createFloatingParticles();
         });
 
-        // تكيف حجم Canvas مع تغيير حجم النافذة
         window.addEventListener('resize', () => {
             if (game) {
                 game.canvas.width = window.innerWidth;
