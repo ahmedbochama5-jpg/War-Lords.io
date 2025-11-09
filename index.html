@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>War Lords - أعداء أذكياء</title>
+    <title>War Lords - الإصدار النهائي</title>
     <style>
         * {
             margin: 0;
@@ -109,6 +109,46 @@
             backdrop-filter: blur(5px);
         }
         
+        #shopPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            display: none;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+            border: 3px solid #f1c40f;
+        }
+        
+        #attackModePanel {
+            position: absolute;
+            bottom: 80px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        
+        #moveModePanel {
+            position: absolute;
+            bottom: 150px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        
         #aiDebug {
             position: absolute;
             top: 10px;
@@ -123,16 +163,86 @@
             max-width: 300px;
         }
         
-        .notification {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(52, 152, 219, 0.9);
-            padding: 10px 20px;
+        .shopItem {
+            background: rgba(241, 196, 15, 0.1);
+            border: 2px solid #f1c40f;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .shopItem.disabled {
+            opacity: 0.5;
+            background: rgba(149, 165, 166, 0.1);
+            border-color: #95a5a6;
+        }
+        
+        .itemInfo {
+            flex: 1;
+        }
+        
+        .itemPrice {
+            color: #f1c40f;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+        
+        .closeButton {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
             border-radius: 5px;
-            z-index: 100;
-            display: none;
+            cursor: pointer;
+            display: block;
+            margin: 15px auto 0;
+        }
+        
+        .buyButton {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .buyButton:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 3px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+
+        .target-circle {
+            position: absolute;
+            border: 2px solid red;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .controls-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #95a5a6;
         }
         
         .selection-box {
@@ -152,6 +262,43 @@
             pointer-events: none;
             z-index: 20;
             display: none;
+        }
+        
+        .notification {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(52, 152, 219, 0.9);
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .attack-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 8;
+        }
+        
+        .movement-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 6;
+        }
+        
+        .gold-display {
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .gold-icon {
+            color: #f1c40f;
+            margin-right: 5px;
         }
         
         .ai-indicator {
@@ -179,21 +326,6 @@
             z-index: 2;
         }
         
-        button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            margin: 3px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        button:hover {
-            background: #2980b9;
-        }
-
         .debug-toggle {
             background: #9b59b6;
         }
@@ -206,29 +338,85 @@
 <body>
     <div id="gameContainer">
         <div id="startScreen">
-            <div class="mainTitle">War Lords AI</div>
-            <div class="subTitle">أعداء أذكياء - الإصدار الذكي</div>
+            <div class="mainTitle">War Lords Ultimate</div>
+            <div class="subTitle">الإصدار النهائي المتكامل</div>
             <button class="startButton" onclick="startGame()">ابدأ اللعبة</button>
             <div class="controls-info">
-                واجه أعداءً أذكياءً بسلوكيات متقدمة واستراتيجيات معقدة!
+                نظام متكامل: ذكاء اصطناعي - متجر - ذهب - تحكم متقدم
             </div>
         </div>
         
         <canvas id="battleScreen"></canvas>
         
         <div id="battlePanel">
+            <button onclick="openShop()">🏪 المتجر</button>
             <button onclick="createJet()">طائرة نفاثة</button>
-            <button onclick="spawnEnemyGroup('basic')">مجموعة أعداء أساسية</button>
-            <button onclick="spawnEnemyGroup('advanced')">مجموعة أعداء متقدمة</button>
-            <button onclick="spawnEnemyGroup('elite')">مجموعة أعداء نخبة</button>
-            <button class="debug-toggle" onclick="toggleDebug()">تفعيل/إلغاء وضع التصحيح</button>
+            <button onclick="fireMissile()">إطلاق صاروخ حر</button>
+            <button onclick="spawnEnemyGroup('basic')">أعداء أساسيون</button>
+            <button onclick="spawnEnemyGroup('advanced')">أعداء متقدمون</button>
+            <button class="debug-toggle" onclick="toggleDebug()">وضع التصحيح</button>
+        </div>
+        
+        <div id="attackModePanel">
+            <div style="color: #e74c3c; margin-bottom: 5px;">وضع الهجوم النشط</div>
+            <div>انقر على أي هدف للهجوم</div>
+            <button onclick="activateMoveMode()">التحول لوضع التحليق</button>
+            <button onclick="cancelAttackMode()">إلغاء</button>
+        </div>
+        
+        <div id="moveModePanel">
+            <div style="color: #2ecc71; margin-bottom: 5px;">وضع التحليق النشط</div>
+            <div>انقر على أي مكان للتحليق إليه</div>
+            <button onclick="activateAttackMode()">التحول لوضع الهجوم</button>
+            <button onclick="cancelMoveMode()">إلغاء</button>
         </div>
         
         <div id="infoPanel">
-            <div>الأعداء النشطين: <span id="activeEnemies">0</span></div>
+            <div class="gold-display">
+                <span class="gold-icon">🪙</span>
+                ذهب: <span id="goldCount">100</span>
+            </div>
+            <div>الأعداء: <span id="enemyCount">0</span></div>
             <div>الطائرات: <span id="jetCount">0</span></div>
             <div>مستوى التهديد: <span id="threatLevel">منخفض</span></div>
             <div id="selectedUnit">لا توجد وحدة مختارة</div>
+        </div>
+        
+        <div id="shopPanel">
+            <h2>🏪 متجر War Lords</h2>
+            <div class="gold-display">
+                <span class="gold-icon">🪙</span>
+                رصيدك: <span id="shopGold">100</span> ذهب
+            </div>
+            
+            <div class="shopItem" id="jetItem">
+                <div class="itemInfo">
+                    <strong>طائرة نفاثة</strong><br>
+                    <small>طائرة سريعة مع صواريخ متطورة</small>
+                </div>
+                <div class="itemPrice">🪙 50</div>
+                <button class="buyButton" onclick="buyItem('jet')">شراء</button>
+            </div>
+            
+            <div class="shopItem" id="soldierItem">
+                <div class="itemInfo">
+                    <strong>جندي بازوكا</strong><br>
+                    <small>جندي مضاد للدبابات</small>
+                </div>
+                <div class="itemPrice">🪙 30</div>
+                <button class="buyButton" onclick="buyItem('soldier')">شراء</button>
+            </div>
+            
+            <div class="shopItem" id="upgradeItem">
+                <div class="itemInfo">
+                    <strong>ترقية الطائرة</strong><br>
+                    <small>زيادة السرعة والضرر +50%</small>
+                </div>
+                <div class="itemPrice">🪙 100</div>
+                <button class="buyButton" onclick="buyItem('upgrade')">ترقية</button>
+            </div>
+            
+            <button class="closeButton" onclick="closeShop()">إغلاق المتجر</button>
         </div>
         
         <div id="aiDebug">
@@ -241,30 +429,44 @@
     </div>
 
     <script>
+        // المتغيرات العامة
         let canvas, ctx;
         let jet = null;
         let missiles = [];
         let enemies = [];
         let soldiers = [];
         let explosions = [];
+        let goldPiles = [];
+        let targetCircle = null;
         let gameStarted = false;
         let selectedUnit = null;
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
         let selectionBox = null;
+        let attackMode = false;
+        let moveMode = false;
         let debugMode = false;
+        let attackLines = [];
+        let movementLines = [];
         let aiIndicators = [];
         let threatRings = [];
         let patrolPaths = [];
+        
+        // نظام الذهب والترقيات
+        let playerGold = 100;
+        let jetUpgradeLevel = 1;
 
         // نظام الذكاء الاصطناعي
         const AIBehaviors = {
-            AGGRESSIVE: 'aggressive',    // هجومي - يهاجم دائماً
-            DEFENSIVE: 'defensive',      // دفاعي - يهاجم فقط عند التهديد
-            PATROL: 'patrol',            // دورية - يتجول في منطقة محددة
-            SNIPER: 'sniper',            // قناص - يهاجم من مسافة بعيدة
-            SUPPORT: 'support',          // دعم - يدعم الوحدات الأخرى
-            AMBUSH: 'ambush',            // كمين - ينتظر ثم يهاجم فجأة
-            RETREAT: 'retreat',          // تراجع - يهرب عند انخفاض الصحة
-            SWARM: 'swarm'               // سرب - يهاجم في مجموعات
+            AGGRESSIVE: 'aggressive',
+            DEFENSIVE: 'defensive', 
+            PATROL: 'patrol',
+            SNIPER: 'sniper',
+            SUPPORT: 'support',
+            AMBUSH: 'ambush',
+            RETREAT: 'retreat',
+            SWARM: 'swarm'
         };
 
         const AIPersonalities = {
@@ -284,12 +486,24 @@
             ctx = canvas.getContext('2d');
             
             setupCanvas();
-            createJet();
-            spawnEnemyGroup('basic');
+            createEnemies();
+            createSoldiers();
             gameLoop();
             gameStarted = true;
             
+            // إضافة مستمعات الأحداث
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && jet) {
+                    fireFreeMissile();
+                }
+            });
+            
             canvas.addEventListener('click', handleUnitClick);
+            canvas.addEventListener('mousedown', startDragging);
+            canvas.addEventListener('mousemove', handleDragging);
+            canvas.addEventListener('mouseup', stopDragging);
+            
+            updateGoldDisplay();
         }
 
         function setupCanvas() {
@@ -297,28 +511,102 @@
             canvas.height = window.innerHeight;
         }
 
-        function toggleDebug() {
-            debugMode = !debugMode;
-            showNotification(debugMode ? '🔧 وضع التصحيح مفعل' : 'وضع التصحيح معطل');
-            updateDebugInfo();
-        }
-
         function showNotification(message) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.style.display = 'block';
+            
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 3000);
         }
 
+        // نظام الذهب والمتجر
+        function openShop() {
+            document.getElementById('shopPanel').style.display = 'block';
+            updateShopDisplay();
+        }
+
+        function closeShop() {
+            document.getElementById('shopPanel').style.display = 'none';
+        }
+
+        function updateShopDisplay() {
+            document.getElementById('shopGold').textContent = playerGold;
+            
+            document.querySelectorAll('.buyButton').forEach(button => {
+                const item = button.closest('.shopItem');
+                const price = parseInt(item.querySelector('.itemPrice').textContent.replace('🪙 ', ''));
+                
+                if (playerGold >= price) {
+                    button.disabled = false;
+                    item.classList.remove('disabled');
+                } else {
+                    button.disabled = true;
+                    item.classList.add('disabled');
+                }
+            });
+        }
+
+        function updateGoldDisplay() {
+            document.getElementById('goldCount').textContent = playerGold;
+        }
+
+        function buyItem(itemType) {
+            let price = 0;
+            let success = false;
+            
+            switch(itemType) {
+                case 'jet':
+                    price = 50;
+                    if (playerGold >= price) {
+                        playerGold -= price;
+                        createJet();
+                        success = true;
+                    }
+                    break;
+                    
+                case 'soldier':
+                    price = 30;
+                    if (playerGold >= price) {
+                        playerGold -= price;
+                        createBazookaSoldier();
+                        success = true;
+                    }
+                    break;
+                    
+                case 'upgrade':
+                    price = 100;
+                    if (playerGold >= price && jet) {
+                        playerGold -= price;
+                        upgradeJet();
+                        success = true;
+                    } else if (!jet) {
+                        showNotification('❌ تحتاج إلى طائرة أولاً!');
+                        return;
+                    }
+                    break;
+            }
+            
+            if (success) {
+                showNotification(`✅ تم الشراء بنجاح! -${price} 🪙`);
+                updateGoldDisplay();
+                updateShopDisplay();
+            } else {
+                showNotification('❌ لا تملك ذهباً كافياً!');
+            }
+        }
+
         function createJet() {
+            const baseSpeed = 3;
+            const baseDamage = 75;
+            
             jet = {
                 x: 100,
                 y: 200,
                 width: 60,
                 height: 20,
-                speed: 4,
+                speed: baseSpeed * jetUpgradeLevel,
                 color: '#3498db',
                 targetX: 100,
                 targetY: 200,
@@ -326,13 +614,74 @@
                 name: 'طائرة نفاثة',
                 health: 100,
                 maxHealth: 100,
-                attackRange: 600,
-                attackDamage: 50,
-                attackCooldown: 0
+                attackRange: 800,
+                attackDamage: baseDamage * jetUpgradeLevel,
+                attackCooldown: 0,
+                isMoving: false,
+                upgradeLevel: jetUpgradeLevel
             };
-            showNotification('✓ تم إنشاء طائرة نفاثة');
+            
+            createTargetCircle();
+            showNotification('✓ تم شراء طائرة نفاثة جديدة');
         }
 
+        function upgradeJet() {
+            if (!jet) return;
+            
+            jetUpgradeLevel++;
+            jet.speed = 3 * jetUpgradeLevel;
+            jet.attackDamage = 75 * jetUpgradeLevel;
+            jet.upgradeLevel = jetUpgradeLevel;
+            jet.color = '#9b59b6';
+            
+            showNotification(`🚀 تم ترقية الطائرة للمستوى ${jetUpgradeLevel}!`);
+        }
+
+        function createBazookaSoldier() {
+            soldiers.push({
+                x: 100 + Math.random() * 100,
+                y: 430,
+                width: 20,
+                height: 25,
+                color: '#8e44ad',
+                type: 'soldier',
+                name: 'جندي بازوكا',
+                range: 150,
+                damage: 30,
+                health: 50,
+                maxHealth: 50,
+                cooldown: 0,
+                attackRange: 150,
+                attackDamage: 30,
+                attackCooldown: 0,
+                goldValue: 10
+            });
+            
+            showNotification('✓ تم شراء جندي بازوكا');
+        }
+
+        function createTargetCircle() {
+            if (targetCircle) {
+                targetCircle.remove();
+            }
+            
+            targetCircle = document.createElement('div');
+            targetCircle.className = 'target-circle';
+            targetCircle.style.width = '200px';
+            targetCircle.style.height = '200px';
+            document.getElementById('gameContainer').appendChild(targetCircle);
+            
+            updateTargetCircle();
+        }
+
+        function updateTargetCircle() {
+            if (jet && targetCircle) {
+                targetCircle.style.left = (jet.x - 100) + 'px';
+                targetCircle.style.top = (jet.y - 100) + 'px';
+            }
+        }
+
+        // نظام الذكاء الاصطناعي للأعداء
         function spawnEnemyGroup(type) {
             const groups = {
                 basic: [
@@ -343,11 +692,6 @@
                     { behavior: AIBehaviors.SNIPER, personality: AIPersonalities.STRATEGIC, count: 2 },
                     { behavior: AIBehaviors.SUPPORT, personality: AIPersonalities.CAUTIOUS, count: 1 },
                     { behavior: AIBehaviors.AMBUSH, personality: AIPersonalities.BRAVE, count: 2 }
-                ],
-                elite: [
-                    { behavior: AIBehaviors.SWARM, personality: AIPersonalities.RECKLESS, count: 4 },
-                    { behavior: AIBehaviors.SNIPER, personality: AIPersonalities.STRATEGIC, count: 1 },
-                    { behavior: AIBehaviors.SUPPORT, personality: AIPersonalities.CAUTIOUS, count: 2 }
                 ]
             };
 
@@ -378,6 +722,7 @@
                 attackRange: getRangeByBehavior(behavior),
                 attackDamage: getDamageByBehavior(behavior),
                 attackCooldown: 0,
+                goldValue: getGoldValueByBehavior(behavior),
                 
                 // نظام الذكاء الاصطناعي
                 behavior: behavior,
@@ -470,6 +815,20 @@
             return damages[behavior] || 20;
         }
 
+        function getGoldValueByBehavior(behavior) {
+            const values = {
+                [AIBehaviors.AGGRESSIVE]: 20,
+                [AIBehaviors.DEFENSIVE]: 15,
+                [AIBehaviors.PATROL]: 12,
+                [AIBehaviors.SNIPER]: 30,
+                [AIBehaviors.SUPPORT]: 18,
+                [AIBehaviors.AMBUSH]: 25,
+                [AIBehaviors.RETREAT]: 8,
+                [AIBehaviors.SWARM]: 22
+            };
+            return values[behavior] || 15;
+        }
+
         function getSpecialAbility(behavior) {
             const abilities = {
                 [AIBehaviors.SNIPER]: { type: 'stealth', duration: 120, cooldown: 300 },
@@ -495,495 +854,65 @@
             return points;
         }
 
-        function updateAI() {
-            enemies.forEach((enemy, index) => {
-                // تحديث المؤقتات
-                if (enemy.abilityCooldown > 0) enemy.abilityCooldown--;
-                if (enemy.attackCooldown > 0) enemy.attackCooldown--;
-                
-                // اتخاذ القرارات
-                if (Date.now() - enemy.lastDecisionTime > enemy.decisionCooldown * 16) {
-                    makeDecision(enemy);
-                    enemy.lastDecisionTime = Date.now();
-                }
-                
-                // تنفيذ السلوك الحالي
-                executeBehavior(enemy);
-                
-                // تحديث الثقة والتقييم
-                updateEnemyConfidence(enemy);
-                
-                // استخدام المهارات الخاصة
-                useSpecialAbility(enemy);
-            });
-            
-            updateAIIndicators();
-            updateThreatLevel();
-        }
-
-        function makeDecision(enemy) {
-            const threats = assessThreats(enemy);
-            enemy.threatAssessment = threats.level;
-            
-            // تحديث الذاكرة
-            updateEnemyMemory(enemy, threats);
-            
-            // اتخاذ القرار بناءً على السلوك والشخصية
-            switch(enemy.behavior) {
-                case AIBehaviors.AGGRESSIVE:
-                    if (threats.closest && Math.random() < enemy.personality.aggression) {
-                        enemy.state = 'attacking';
-                        enemy.target = threats.closest;
-                    }
-                    break;
-                    
-                case AIBehaviors.DEFENSIVE:
-                    if (threats.level > enemy.personality.attackThreshold) {
-                        enemy.state = 'attacking';
-                        enemy.target = threats.mostDangerous;
-                    } else {
-                        enemy.state = 'patrolling';
-                    }
-                    break;
-                    
-                case AIBehaviors.PATROL:
-                    if (threats.closest && threats.distance < enemy.attackRange * 0.8) {
-                        enemy.state = 'attacking';
-                        enemy.target = threats.closest;
-                    } else {
-                        enemy.state = 'patrolling';
-                    }
-                    break;
-                    
-                case AIBehaviors.SNIPER:
-                    if (threats.closest && threats.distance < enemy.attackRange * 0.6) {
-                        enemy.state = 'attacking';
-                        enemy.target = threats.closest;
-                    } else if (threats.closest) {
-                        enemy.state = 'positioning';
-                        enemy.movementTarget = findSniperPosition(enemy, threats.closest);
-                    }
-                    break;
-                    
-                case AIBehaviors.AMBUSH:
-                    if (!enemy.target && threats.closest) {
-                        enemy.state = 'hiding';
-                        enemy.target = threats.closest;
-                    } else if (enemy.target && threats.distance < enemy.attackRange * 0.5) {
-                        enemy.state = 'ambushing';
-                    }
-                    break;
-                    
-                case AIBehaviors.RETREAT:
-                    if (threats.level > enemy.personality.retreatThreshold) {
-                        enemy.state = 'retreating';
-                        enemy.movementTarget = findSafeSpot(enemy);
-                    } else if (threats.closest) {
-                        enemy.state = 'attacking';
-                        enemy.target = threats.closest;
-                    }
-                    break;
-                    
-                case AIBehaviors.SWARM:
-                    if (threats.closest) {
-                        enemy.state = 'swarming';
-                        enemy.target = threats.closest;
-                        coordinateSwarmAttack(enemy, threats.closest);
-                    }
-                    break;
-            }
-        }
-
-        function assessThreats(enemy) {
-            let closest = null;
-            let minDistance = Infinity;
-            let mostDangerous = null;
-            let maxThreat = 0;
-            let totalThreat = 0;
-            
-            // تقييم الطائرة
-            if (jet) {
-                const distance = Math.sqrt((enemy.x - jet.x) ** 2 + (enemy.y - jet.y) ** 2);
-                const threat = calculateThreatLevel(jet, distance);
-                totalThreat += threat;
-                
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closest = jet;
-                }
-                if (threat > maxThreat) {
-                    maxThreat = threat;
-                    mostDangerous = jet;
-                }
-            }
-            
-            // تقييم الجنود
-            soldiers.forEach(soldier => {
-                const distance = Math.sqrt((enemy.x - soldier.x) ** 2 + (enemy.y - soldier.y) ** 2);
-                const threat = calculateThreatLevel(soldier, distance);
-                totalThreat += threat;
-                
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closest = soldier;
-                }
-            });
-            
-            return {
-                closest: closest,
-                mostDangerous: mostDangerous,
-                distance: minDistance,
-                level: totalThreat,
-                count: (jet ? 1 : 0) + soldiers.length
-            };
-        }
-
-        function calculateThreatLevel(unit, distance) {
-            let threat = 0;
-            
-            if (unit.type === 'jet') {
-                threat = (unit.attackDamage / distance) * 2;
-            } else if (unit.type === 'soldier') {
-                threat = (unit.attackDamage / distance) * 1.5;
-            }
-            
-            // خفض التهديد إذا كانت الوحدة بعيدة عن المدى
-            if (distance > 400) threat *= 0.3;
-            if (distance > 600) threat *= 0.1;
-            
-            return threat;
-        }
-
-        function updateEnemyMemory(enemy, threats) {
-            // تحديث آخر رؤية للطائرة
-            if (jet) {
-                enemy.memory.lastSeenJet = { x: jet.x, y: jet.y, time: Date.now() };
-            }
-            
-            // تحديث التهديدات المعروفة
-            if (threats.closest) {
-                const existingThreat = enemy.memory.knownThreats.find(t => 
-                    t.unit === threats.closest
-                );
-                
-                if (!existingThreat) {
-                    enemy.memory.knownThreats.push({
-                        unit: threats.closest,
-                        lastSeen: Date.now(),
-                        threatLevel: threats.level
-                    });
-                } else {
-                    existingThreat.lastSeen = Date.now();
-                    existingThreat.threatLevel = threats.level;
-                }
-            }
-            
-            // تنظيف الذاكرة القديمة
-            enemy.memory.knownThreats = enemy.memory.knownThreats.filter(t => 
-                Date.now() - t.lastSeen < 30000
-            );
-        }
-
-        function updateEnemyConfidence(enemy) {
-            // تحديث مستوى الثقة بناءً على الصحة والنجاحات
-            const healthRatio = enemy.health / enemy.maxHealth;
-            const successRate = calculateSuccessRate(enemy);
-            
-            enemy.confidence = (healthRatio * 0.6) + (successRate * 0.4);
-            
-            // تأثير الثقة على القرارات
-            if (enemy.confidence > 0.7) {
-                enemy.aggressionLevel = Math.min(1, enemy.personality.aggression * 1.3);
-            } else if (enemy.confidence < 0.3) {
-                enemy.aggressionLevel = enemy.personality.aggression * 0.7;
-            }
-        }
-
-        function calculateSuccessRate(enemy) {
-            if (enemy.memory.attackHistory.length === 0) return 0.5;
-            
-            const recentAttacks = enemy.memory.attackHistory.slice(-10);
-            const successfulAttacks = recentAttacks.filter(attack => attack.success).length;
-            
-            return successfulAttacks / recentAttacks.length;
-        }
-
-        function executeBehavior(enemy) {
-            switch(enemy.state) {
-                case 'attacking':
-                    executeAttack(enemy);
-                    break;
-                case 'patrolling':
-                    executePatrol(enemy);
-                    break;
-                case 'retreating':
-                    executeRetreat(enemy);
-                    break;
-                case 'positioning':
-                    executePositioning(enemy);
-                    break;
-                case 'hiding':
-                    executeHiding(enemy);
-                    break;
-                case 'ambushing':
-                    executeAmbush(enemy);
-                    break;
-                case 'swarming':
-                    executeSwarm(enemy);
-                    break;
-                default:
-                    executeIdle(enemy);
-            }
-        }
-
-        function executeAttack(enemy) {
-            if (!enemy.target) {
-                enemy.state = 'idle';
-                return;
-            }
-            
-            const dx = enemy.target.x - enemy.x;
-            const dy = enemy.target.y - enemy.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // الحركة نحو الهدف
-            if (distance > enemy.attackRange * 0.8) {
-                enemy.x += (dx / distance) * 2;
-                enemy.y += (dy / distance) * 2;
-            }
-            
-            // الهجوم
-            if (distance <= enemy.attackRange && enemy.attackCooldown === 0) {
-                fireEnemyMissile(enemy, enemy.target);
-                enemy.attackCooldown = 60 + Math.random() * 30;
-                
-                // تسجيل في السجل
-                enemy.memory.attackHistory.push({
-                    target: enemy.target.type,
-                    time: Date.now(),
-                    success: Math.random() > 0.3 // محاكاة دقة الإصابة
+        function spawnGoldPile(x, y, amount) {
+            for (let i = 0; i < amount; i++) {
+                goldPiles.push({
+                    x: x + Math.random() * 30 - 15,
+                    y: y + Math.random() * 30 - 15,
+                    value: 5,
+                    collected: false
                 });
-                
-                // الحفاظ على آخر 20 هجمة فقط
-                if (enemy.memory.attackHistory.length > 20) {
-                    enemy.memory.attackHistory.shift();
-                }
-            }
-            
-            // التراجع إذا كانت الصحة منخفضة
-            if (enemy.health / enemy.maxHealth < enemy.personality.retreatThreshold) {
-                enemy.state = 'retreating';
-                enemy.movementTarget = findSafeSpot(enemy);
             }
         }
 
-        function executePatrol(enemy) {
-            const targetPoint = enemy.patrolPoints[enemy.currentPatrolIndex];
-            const dx = targetPoint.x - enemy.x;
-            const dy = targetPoint.y - enemy.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < 10) {
-                enemy.currentPatrolIndex = (enemy.currentPatrolIndex + 1) % enemy.patrolPoints.length;
-            } else {
-                enemy.x += (dx / distance) * 1.5;
-                enemy.y += (dy / distance) * 1.5;
-            }
-        }
-
-        function executeRetreat(enemy) {
-            const dx = enemy.movementTarget.x - enemy.x;
-            const dy = enemy.movementTarget.y - enemy.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < 20) {
-                enemy.state = 'idle';
-            } else {
-                enemy.x += (dx / distance) * 2.5; // أسرع عند التراجع
-                enemy.y += (dy / distance) * 2.5;
-            }
-        }
-
-        function findSafeSpot(enemy) {
-            // البحث عن موقع بعيد عن التهديدات
-            let bestSpot = { x: enemy.x, y: enemy.y };
-            let maxDistance = 0;
-            
-            for (let i = 0; i < 10; i++) {
-                const spot = {
-                    x: 100 + Math.random() * (canvas.width - 200),
-                    y: 100 + Math.random() * (canvas.height - 200)
-                };
-                
-                let minDistanceToThreat = Infinity;
-                
-                // حساب المسافة لأقرب تهديد
-                if (jet) {
-                    const dist = Math.sqrt((spot.x - jet.x) ** 2 + (spot.y - jet.y) ** 2);
-                    minDistanceToThreat = Math.min(minDistanceToThreat, dist);
-                }
-                
-                soldiers.forEach(soldier => {
-                    const dist = Math.sqrt((spot.x - soldier.x) ** 2 + (spot.y - soldier.y) ** 2);
-                    minDistanceToThreat = Math.min(minDistanceToThreat, dist);
-                });
-                
-                if (minDistanceToThreat > maxDistance) {
-                    maxDistance = minDistanceToThreat;
-                    bestSpot = spot;
-                }
-            }
-            
-            return bestSpot;
-        }
-
-        function fireEnemyMissile(enemy, target) {
-            missiles.push({
-                x: enemy.x,
-                y: enemy.y,
-                targetX: target.x,
-                targetY: target.y,
-                speed: 4,
-                progress: 0,
-                fromEnemy: true,
-                damage: enemy.attackDamage,
-                tracking: true,
-                target: target
-            });
-        }
-
-        function useSpecialAbility(enemy) {
-            if (!enemy.specialAbility || enemy.abilityCooldown > 0) return;
-            
-            const shouldUse = Math.random() < 0.1; // 10% فرصة لاستخدام المهارة
-            
-            if (shouldUse) {
-                switch(enemy.specialAbility.type) {
-                    case 'stealth':
-                        enemy.color = '#666666';
-                        setTimeout(() => {
-                            if (enemy.health > 0) {
-                                enemy.color = getColorByBehavior(enemy.behavior);
-                            }
-                        }, enemy.specialAbility.duration * 16);
-                        showNotification(`🕵️ ${enemy.name} يستخدم التخفي!`);
-                        break;
-                        
-                    case 'heal':
-                        const nearbyAllies = enemies.filter(e => 
-                            e !== enemy && 
-                            Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2) < 150
-                        );
-                        
-                        nearbyAllies.forEach(ally => {
-                            ally.health = Math.min(ally.maxHealth, ally.health + enemy.specialAbility.amount);
-                        });
-                        showNotification(`💚 ${enemy.name} يشفي الحلفاء!`);
-                        break;
-                        
-                    case 'surprise':
-                        enemy.attackDamage *= enemy.specialAbility.damageMultiplier;
-                        setTimeout(() => {
-                            if (enemy.health > 0) {
-                                enemy.attackDamage = getDamageByBehavior(enemy.behavior);
-                            }
-                        }, 3000);
-                        showNotification(`💥 ${enemy.name} يطلق هجوم مفاجئ!`);
-                        break;
-                }
-                
-                enemy.abilityCooldown = enemy.specialAbility.cooldown;
-            }
-        }
-
-        function updateAIIndicators() {
-            // مسح المؤشرات القديمة
-            aiIndicators.forEach(indicator => indicator.remove());
-            threatRings.forEach(ring => ring.remove());
-            patrolPaths.forEach(path => path.remove());
-            
-            aiIndicators = [];
-            threatRings = [];
-            patrolPaths = [];
-            
-            if (!debugMode) return;
-            
-            enemies.forEach(enemy => {
-                // مؤشر السلوك
-                const indicator = document.createElement('div');
-                indicator.className = 'ai-indicator';
-                indicator.style.left = (enemy.x - 4) + 'px';
-                indicator.style.top = (enemy.y - 4) + 'px';
-                indicator.style.background = getColorByBehavior(enemy.behavior);
-                document.getElementById('gameContainer').appendChild(indicator);
-                aiIndicators.push(indicator);
-                
-                // دائرة التهديد
-                const threatRing = document.createElement('div');
-                threatRing.className = 'threat-ring';
-                threatRing.style.left = (enemy.x - enemy.attackRange) + 'px';
-                threatRing.style.top = (enemy.y - enemy.attackRange) + 'px';
-                threatRing.style.width = (enemy.attackRange * 2) + 'px';
-                threatRing.style.height = (enemy.attackRange * 2) + 'px';
-                document.getElementById('gameContainer').appendChild(threatRing);
-                threatRings.push(threatRing);
-                
-                // مسارات الدوريات
-                if (enemy.behavior === AIBehaviors.PATROL) {
-                    enemy.patrolPoints.forEach((point, index) => {
-                        const path = document.createElement('div');
-                        path.className = 'patrol-path';
-                        path.style.left = (point.x - 20) + 'px';
-                        path.style.top = (point.y - 20) + 'px';
-                        path.style.width = '40px';
-                        path.style.height = '40px';
-                        document.getElementById('gameContainer').appendChild(path);
-                        patrolPaths.push(path);
-                    });
-                }
-            });
-        }
-
-        function updateThreatLevel() {
-            let totalThreat = 0;
-            enemies.forEach(enemy => {
-                totalThreat += enemy.threatAssessment;
-            });
-            
-            let threatLevel = 'منخفض';
-            if (totalThreat > 5) threatLevel = 'متوسط';
-            if (totalThreat > 10) threatLevel = 'مرتفع';
-            if (totalThreat > 20) threatLevel = 'خطير';
-            
-            document.getElementById('threatLevel').textContent = threatLevel;
-            document.getElementById('activeEnemies').textContent = enemies.length;
-            document.getElementById('jetCount').textContent = jet ? 1 : 0;
-        }
-
-        function updateDebugInfo() {
-            if (!debugMode) {
-                document.getElementById('debugInfo').textContent = 'وضع التصحيح غير مفعل';
-                return;
-            }
-            
-            let debugText = '';
-            enemies.forEach((enemy, index) => {
-                debugText += `${enemy.name}: ${enemy.state} (ثقة: ${Math.round(enemy.confidence * 100)}%)<br>`;
-            });
-            
-            document.getElementById('debugInfo').innerHTML = debugText || 'لا توجد أعداء نشطين';
-        }
-
-        // باقي الدوال الأساسية للعبة
+        // نظام التحكم والتفاعل
         function handleUnitClick(e) {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
+            // جمع الذهب أولاً
+            for (let i = goldPiles.length - 1; i >= 0; i--) {
+                const gold = goldPiles[i];
+                const distance = Math.sqrt((x - gold.x) ** 2 + (y - gold.y) ** 2);
+                
+                if (distance < 20 && !gold.collected) {
+                    playerGold += gold.value;
+                    gold.collected = true;
+                    goldPiles.splice(i, 1);
+                    showNotification(`+${gold.value} 🪙 ذهب!`);
+                    updateGoldDisplay();
+                    updateShopDisplay();
+                    return;
+                }
+            }
+            
+            if (attackMode && jet) {
+                let target = findTargetAt(x, y);
+                if (target) {
+                    launchTargetedAttack(target);
+                    return;
+                }
+            }
+            
+            if (moveMode && jet) {
+                moveJetTo(x, y);
+                return;
+            }
+            
             let clickedUnit = null;
             
             if (jet && isPointInUnit(x, y, jet)) {
                 clickedUnit = jet;
+            }
+            
+            if (!clickedUnit) {
+                for (const soldier of soldiers) {
+                    if (isPointInUnit(x, y, soldier)) {
+                        clickedUnit = soldier;
+                        break;
+                    }
+                }
             }
             
             if (!clickedUnit) {
@@ -997,9 +926,198 @@
             
             if (clickedUnit) {
                 selectUnit(clickedUnit);
+                showNotification(`✓ تم اختيار ${clickedUnit.name}`);
+                
+                if (clickedUnit.type === 'jet') {
+                    activateAttackMode();
+                } else {
+                    deactivateAllModes();
+                }
             } else {
                 deselectUnit();
+                deactivateAllModes();
             }
+        }
+
+        function findTargetAt(x, y) {
+            for (const soldier of soldiers) {
+                if (isPointInUnit(x, y, soldier)) {
+                    return soldier;
+                }
+            }
+            
+            for (const enemy of enemies) {
+                if (isPointInUnit(x, y, enemy)) {
+                    return enemy;
+                }
+            }
+            
+            return null;
+        }
+
+        function moveJetTo(x, y) {
+            if (!jet) return;
+            
+            jet.targetX = x;
+            jet.targetY = y;
+            jet.isMoving = true;
+            
+            addMovementLine(jet, {x: x, y: y});
+            showNotification(`✈️ الطائرة تتجه إلى الموقع المحدد`);
+            
+            deactivateMoveMode();
+            deselectUnit();
+        }
+
+        function addMovementLine(fromUnit, toPos) {
+            const line = document.createElement('div');
+            line.className = 'movement-line';
+            line.style.left = fromUnit.x + 'px';
+            line.style.top = fromUnit.y + 'px';
+            line.style.width = '2px';
+            line.style.height = Math.sqrt(
+                (toPos.x - fromUnit.x) ** 2 + 
+                (toPos.y - fromUnit.y) ** 2
+            ) + 'px';
+            line.style.transform = `rotate(${Math.atan2(toPos.y - fromUnit.y, toPos.x - fromUnit.x)}rad)`;
+            line.style.transformOrigin = '0 0';
+            line.style.background = 'linear-gradient(to right, #3498db, #2ecc71)';
+            document.getElementById('gameContainer').appendChild(line);
+            
+            movementLines.push(line);
+            
+            setTimeout(() => {
+                if (line.parentNode) {
+                    line.parentNode.removeChild(line);
+                }
+                const index = movementLines.indexOf(line);
+                if (index > -1) {
+                    movementLines.splice(index, 1);
+                }
+            }, 2000);
+        }
+
+        function launchTargetedAttack(target) {
+            if (!jet || jet.attackCooldown > 0) return;
+            
+            const distance = Math.sqrt(
+                (jet.x - target.x) ** 2 + 
+                (jet.y - target.y) ** 2
+            );
+            
+            if (distance > jet.attackRange) {
+                showNotification('✗ الهدف خارج المدى!');
+                return;
+            }
+            
+            missiles.push({
+                x: jet.x,
+                y: jet.y,
+                targetX: target.x,
+                targetY: target.y,
+                speed: 6,
+                progress: 0,
+                tracking: true,
+                target: target,
+                damage: jet.attackDamage
+            });
+            
+            addAttackLine(jet, target);
+            jet.attackCooldown = 45;
+            showNotification(`🚀 ${jet.name} تهاجم ${target.name}!`);
+            
+            deactivateAttackMode();
+            deselectUnit();
+        }
+
+        function addAttackLine(fromUnit, toUnit) {
+            const line = document.createElement('div');
+            line.className = 'attack-line';
+            line.style.left = fromUnit.x + 'px';
+            line.style.top = fromUnit.y + 'px';
+            line.style.width = '2px';
+            line.style.height = Math.sqrt(
+                (toUnit.x - fromUnit.x) ** 2 + 
+                (toUnit.y - fromUnit.y) ** 2
+            ) + 'px';
+            line.style.transform = `rotate(${Math.atan2(toUnit.y - fromUnit.y, toUnit.x - fromUnit.x)}rad)`;
+            line.style.transformOrigin = '0 0';
+            line.style.background = 'linear-gradient(to right, #ff0000, #ff6b00)';
+            document.getElementById('gameContainer').appendChild(line);
+            
+            attackLines.push(line);
+            
+            setTimeout(() => {
+                if (line.parentNode) {
+                    line.parentNode.removeChild(line);
+                }
+                const index = attackLines.indexOf(line);
+                if (index > -1) {
+                    attackLines.splice(index, 1);
+                }
+            }, 1000);
+        }
+
+        function activateAttackMode() {
+            attackMode = true;
+            moveMode = false;
+            document.getElementById('attackModePanel').style.display = 'block';
+            document.getElementById('moveModePanel').style.display = 'none';
+            showNotification('🎯 وضع الهجوم نشط - انقر على أي هدف للهجوم!');
+        }
+
+        function activateMoveMode() {
+            moveMode = true;
+            attackMode = false;
+            document.getElementById('moveModePanel').style.display = 'block';
+            document.getElementById('attackModePanel').style.display = 'none';
+            showNotification('✈️ وضع التحليق نشط - انقر على أي مكان للتحليق إليه!');
+        }
+
+        function deactivateAttackMode() {
+            attackMode = false;
+            document.getElementById('attackModePanel').style.display = 'none';
+        }
+
+        function deactivateMoveMode() {
+            moveMode = false;
+            document.getElementById('moveModePanel').style.display = 'none';
+        }
+
+        function deactivateAllModes() {
+            deactivateAttackMode();
+            deactivateMoveMode();
+        }
+
+        function cancelAttackMode() {
+            deactivateAttackMode();
+            showNotification('تم إلغاء وضع الهجوم');
+        }
+
+        function cancelMoveMode() {
+            deactivateMoveMode();
+            showNotification('تم إلغاء وضع التحليق');
+        }
+
+        function fireFreeMissile() {
+            if (!jet) return;
+            
+            missiles.push({
+                x: jet.x + 50,
+                y: jet.y,
+                targetX: jet.targetX,
+                targetY: jet.targetY,
+                speed: 5,
+                progress: 0,
+                tracking: false,
+                damage: 50
+            });
+            
+            showNotification('🚀 تم إطلاق صاروخ حر');
+        }
+
+        function fireMissile() {
+            fireFreeMissile();
         }
 
         function isPointInUnit(x, y, unit) {
@@ -1040,11 +1158,17 @@
 
         function updateUnitInfo(unit) {
             const unitInfo = document.getElementById('unitInfo');
-            let infoHTML = `<strong>${unit.name}</strong><br>`;
-            infoHTML += `الصحة: ${unit.health}/${unit.maxHealth}<br>`;
-            infoHTML += `السلوك: ${unit.behavior}<br>`;
-            infoHTML += `الثقة: ${Math.round(unit.confidence * 100)}%<br>`;
-            infoHTML += `الحالة: ${unit.state}`;
+            let infoHTML = `<strong>${unit.name}</strong><br>الصحة: ${unit.health}/${unit.maxHealth}`;
+            
+            if (unit.attackDamage) {
+                infoHTML += `<br>الضرر: ${unit.attackDamage}`;
+            }
+            if (unit.upgradeLevel) {
+                infoHTML += `<br>المستوى: ${unit.upgradeLevel}`;
+            }
+            if (unit.behavior) {
+                infoHTML += `<br>السلوك: ${unit.behavior}`;
+            }
             
             unitInfo.innerHTML = infoHTML;
             unitInfo.style.left = (unit.x + 20) + 'px';
@@ -1052,8 +1176,383 @@
             unitInfo.style.display = 'block';
         }
 
+        function startDragging(e) {
+            if (!selectedUnit || selectedUnit.type === 'jet') return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            if (isPointInUnit(x, y, selectedUnit)) {
+                isDragging = true;
+                dragOffsetX = x - selectedUnit.x;
+                dragOffsetY = y - selectedUnit.y;
+            }
+        }
+
+        function handleDragging(e) {
+            if (!isDragging || !selectedUnit || selectedUnit.type === 'jet') return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            selectedUnit.x = x - dragOffsetX;
+            selectedUnit.y = y - dragOffsetY;
+            
+            if (selectionBox) {
+                selectionBox.style.left = (selectedUnit.x - selectedUnit.width/2 - 5) + 'px';
+                selectionBox.style.top = (selectedUnit.y - selectedUnit.height/2 - 5) + 'px';
+            }
+            
+            updateUnitInfo(selectedUnit);
+        }
+
+        function stopDragging() {
+            isDragging = false;
+            if (selectedUnit && selectedUnit.type !== 'jet') {
+                showNotification(`✓ تم نقل ${selectedUnit.name} إلى موقع جديد`);
+            }
+        }
+
+        // نظام الذكاء الاصطناعي - التحديث
+        function updateAI() {
+            enemies.forEach((enemy, index) => {
+                if (enemy.abilityCooldown > 0) enemy.abilityCooldown--;
+                if (enemy.attackCooldown > 0) enemy.attackCooldown--;
+                
+                if (Date.now() - enemy.lastDecisionTime > enemy.decisionCooldown * 16) {
+                    makeDecision(enemy);
+                    enemy.lastDecisionTime = Date.now();
+                }
+                
+                executeBehavior(enemy);
+                updateEnemyConfidence(enemy);
+                useSpecialAbility(enemy);
+            });
+            
+            updateAIIndicators();
+            updateThreatLevel();
+        }
+
+        function makeDecision(enemy) {
+            const threats = assessThreats(enemy);
+            enemy.threatAssessment = threats.level;
+            updateEnemyMemory(enemy, threats);
+            
+            if (threats.closest && Math.random() < enemy.personality.aggression) {
+                enemy.state = 'attacking';
+                enemy.target = threats.closest;
+            } else {
+                enemy.state = 'patrolling';
+            }
+        }
+
+        function assessThreats(enemy) {
+            let closest = null;
+            let minDistance = Infinity;
+            let totalThreat = 0;
+            
+            if (jet) {
+                const distance = Math.sqrt((enemy.x - jet.x) ** 2 + (enemy.y - jet.y) ** 2);
+                const threat = calculateThreatLevel(jet, distance);
+                totalThreat += threat;
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closest = jet;
+                }
+            }
+            
+            soldiers.forEach(soldier => {
+                const distance = Math.sqrt((enemy.x - soldier.x) ** 2 + (enemy.y - soldier.y) ** 2);
+                const threat = calculateThreatLevel(soldier, distance);
+                totalThreat += threat;
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closest = soldier;
+                }
+            });
+            
+            return {
+                closest: closest,
+                distance: minDistance,
+                level: totalThreat
+            };
+        }
+
+        function calculateThreatLevel(unit, distance) {
+            let threat = 0;
+            
+            if (unit.type === 'jet') {
+                threat = (unit.attackDamage / distance) * 2;
+            } else if (unit.type === 'soldier') {
+                threat = (unit.attackDamage / distance) * 1.5;
+            }
+            
+            if (distance > 400) threat *= 0.3;
+            if (distance > 600) threat *= 0.1;
+            
+            return threat;
+        }
+
+        function updateEnemyMemory(enemy, threats) {
+            if (jet) {
+                enemy.memory.lastSeenJet = { x: jet.x, y: jet.y, time: Date.now() };
+            }
+        }
+
+        function updateEnemyConfidence(enemy) {
+            const healthRatio = enemy.health / enemy.maxHealth;
+            enemy.confidence = healthRatio;
+            
+            if (enemy.confidence > 0.7) {
+                enemy.aggressionLevel = Math.min(1, enemy.personality.aggression * 1.3);
+            } else if (enemy.confidence < 0.3) {
+                enemy.aggressionLevel = enemy.personality.aggression * 0.7;
+            }
+        }
+
+        function executeBehavior(enemy) {
+            switch(enemy.state) {
+                case 'attacking':
+                    executeAttack(enemy);
+                    break;
+                case 'patrolling':
+                    executePatrol(enemy);
+                    break;
+                default:
+                    executeIdle(enemy);
+            }
+        }
+
+        function executeAttack(enemy) {
+            if (!enemy.target) {
+                enemy.state = 'idle';
+                return;
+            }
+            
+            const dx = enemy.target.x - enemy.x;
+            const dy = enemy.target.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > enemy.attackRange * 0.8) {
+                enemy.x += (dx / distance) * 2;
+                enemy.y += (dy / distance) * 2;
+            }
+            
+            if (distance <= enemy.attackRange && enemy.attackCooldown === 0) {
+                fireEnemyMissile(enemy, enemy.target);
+                enemy.attackCooldown = 60 + Math.random() * 30;
+                
+                enemy.memory.attackHistory.push({
+                    target: enemy.target.type,
+                    time: Date.now(),
+                    success: Math.random() > 0.3
+                });
+                
+                if (enemy.memory.attackHistory.length > 20) {
+                    enemy.memory.attackHistory.shift();
+                }
+            }
+            
+            if (enemy.health / enemy.maxHealth < enemy.personality.retreatThreshold) {
+                enemy.state = 'retreating';
+                enemy.movementTarget = findSafeSpot(enemy);
+            }
+        }
+
+        function executePatrol(enemy) {
+            const targetPoint = enemy.patrolPoints[enemy.currentPatrolIndex];
+            const dx = targetPoint.x - enemy.x;
+            const dy = targetPoint.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 10) {
+                enemy.currentPatrolIndex = (enemy.currentPatrolIndex + 1) % enemy.patrolPoints.length;
+            } else {
+                enemy.x += (dx / distance) * 1.5;
+                enemy.y += (dy / distance) * 1.5;
+            }
+        }
+
+        function executeIdle(enemy) {
+            // لا حركة
+        }
+
+        function findSafeSpot(enemy) {
+            return {
+                x: 100 + Math.random() * (canvas.width - 200),
+                y: 100 + Math.random() * (canvas.height - 200)
+            };
+        }
+
+        function fireEnemyMissile(enemy, target) {
+            missiles.push({
+                x: enemy.x,
+                y: enemy.y,
+                targetX: target.x,
+                targetY: target.y,
+                speed: 4,
+                progress: 0,
+                fromEnemy: true,
+                damage: enemy.attackDamage,
+                tracking: true,
+                target: target
+            });
+        }
+
+        function useSpecialAbility(enemy) {
+            if (!enemy.specialAbility || enemy.abilityCooldown > 0) return;
+            
+            const shouldUse = Math.random() < 0.1;
+            
+            if (shouldUse) {
+                switch(enemy.specialAbility.type) {
+                    case 'stealth':
+                        enemy.color = '#666666';
+                        setTimeout(() => {
+                            if (enemy.health > 0) {
+                                enemy.color = getColorByBehavior(enemy.behavior);
+                            }
+                        }, enemy.specialAbility.duration * 16);
+                        showNotification(`🕵️ ${enemy.name} يستخدم التخفي!`);
+                        break;
+                }
+                
+                enemy.abilityCooldown = enemy.specialAbility.cooldown;
+            }
+        }
+
+        function updateAIIndicators() {
+            aiIndicators.forEach(indicator => indicator.remove());
+            threatRings.forEach(ring => ring.remove());
+            patrolPaths.forEach(path => path.remove());
+            
+            aiIndicators = [];
+            threatRings = [];
+            patrolPaths = [];
+            
+            if (!debugMode) return;
+            
+            enemies.forEach(enemy => {
+                const indicator = document.createElement('div');
+                indicator.className = 'ai-indicator';
+                indicator.style.left = (enemy.x - 4) + 'px';
+                indicator.style.top = (enemy.y - 4) + 'px';
+                indicator.style.background = getColorByBehavior(enemy.behavior);
+                document.getElementById('gameContainer').appendChild(indicator);
+                aiIndicators.push(indicator);
+                
+                const threatRing = document.createElement('div');
+                threatRing.className = 'threat-ring';
+                threatRing.style.left = (enemy.x - enemy.attackRange) + 'px';
+                threatRing.style.top = (enemy.y - enemy.attackRange) + 'px';
+                threatRing.style.width = (enemy.attackRange * 2) + 'px';
+                threatRing.style.height = (enemy.attackRange * 2) + 'px';
+                document.getElementById('gameContainer').appendChild(threatRing);
+                threatRings.push(threatRing);
+            });
+        }
+
+        function updateThreatLevel() {
+            let totalThreat = 0;
+            enemies.forEach(enemy => {
+                totalThreat += enemy.threatAssessment;
+            });
+            
+            let threatLevel = 'منخفض';
+            if (totalThreat > 5) threatLevel = 'متوسط';
+            if (totalThreat > 10) threatLevel = 'مرتفع';
+            if (totalThreat > 20) threatLevel = 'خطير';
+            
+            document.getElementById('threatLevel').textContent = threatLevel;
+            document.getElementById('enemyCount').textContent = enemies.length;
+            document.getElementById('jetCount').textContent = jet ? 1 : 0;
+        }
+
+        function toggleDebug() {
+            debugMode = !debugMode;
+            showNotification(debugMode ? '🔧 وضع التصحيح مفعل' : 'وضع التصحيح معطل');
+            updateDebugInfo();
+        }
+
+        function updateDebugInfo() {
+            if (!debugMode) {
+                document.getElementById('debugInfo').textContent = 'وضع التصحيح غير مفعل';
+                return;
+            }
+            
+            let debugText = '';
+            enemies.forEach((enemy, index) => {
+                debugText += `${enemy.name}: ${enemy.state} (ثقة: ${Math.round(enemy.confidence * 100)}%)<br>`;
+            });
+            
+            document.getElementById('debugInfo').innerHTML = debugText || 'لا توجد أعداء نشطين';
+        }
+
+        // الدوال الأساسية للعبة
+        function createEnemies() {
+            enemies = [];
+            
+            const tankTypes = [
+                { type: "heavy", color: "#c0392b", health: 150, size: 35, name: "دبابة ثقيلة", goldValue: 25 },
+                { type: "light", color: "#e74c3c", health: 80, size: 25, name: "دبابة خفيفة", goldValue: 15 }
+            ];
+            
+            for (let i = 0; i < 3; i++) {
+                const tankType = tankTypes[i % 2];
+                enemies.push({
+                    x: 600 + i * 100,
+                    y: 400,
+                    width: tankType.size,
+                    height: tankType.size,
+                    color: tankType.color,
+                    type: 'tank',
+                    name: tankType.name,
+                    health: tankType.health,
+                    maxHealth: tankType.health,
+                    attackRange: 120,
+                    attackDamage: 15,
+                    attackCooldown: 0,
+                    goldValue: tankType.goldValue
+                });
+            }
+        }
+
+        function createSoldiers() {
+            soldiers = [];
+            
+            const soldierTypes = [
+                { type: "bazooka", color: "#8e44ad", range: 150, damage: 30, name: "جندي بازوكا", goldValue: 10 },
+                { type: "machinegun", color: "#f39c12", range: 100, damage: 10, name: "جندي رشاش", goldValue: 5 }
+            ];
+            
+            for (let i = 0; i < 4; i++) {
+                const soldierType = soldierTypes[i % 2];
+                soldiers.push({
+                    x: 700 + i * 60,
+                    y: 430,
+                    width: 20,
+                    height: 25,
+                    color: soldierType.color,
+                    type: 'soldier',
+                    name: soldierType.name,
+                    range: soldierType.range,
+                    damage: soldierType.damage,
+                    health: 50,
+                    maxHealth: 50,
+                    cooldown: 0,
+                    attackRange: soldierType.range,
+                    attackDamage: soldierType.damage,
+                    attackCooldown: 0,
+                    goldValue: soldierType.goldValue
+                });
+            }
+        }
+
         function update() {
-            // تحديث الطائرة
             if (jet) {
                 const dx = jet.targetX - jet.x;
                 const dy = jet.targetY - jet.y;
@@ -1062,19 +1561,28 @@
                 if (distance > 5) {
                     jet.x += (dx / distance) * jet.speed;
                     jet.y += (dy / distance) * jet.speed;
+                    jet.isMoving = true;
+                } else {
+                    jet.isMoving = false;
                 }
                 
                 if (jet.attackCooldown > 0) {
                     jet.attackCooldown--;
                 }
+                
+                updateTargetCircle();
             }
             
-            // تحديث الذكاء الاصطناعي
             updateAI();
             
-            // تحديث الصواريخ
             for (let i = missiles.length - 1; i >= 0; i--) {
                 const missile = missiles[i];
+                
+                if (missile.tracking && missile.target) {
+                    missile.targetX = missile.target.x;
+                    missile.targetY = missile.target.y;
+                }
+                
                 missile.progress += 0.05;
                 
                 if (missile.progress >= 1) {
@@ -1083,7 +1591,6 @@
                 }
             }
             
-            // تحديث الانفجارات
             for (let i = explosions.length - 1; i >= 0; i--) {
                 explosions[i].radius += 2;
                 if (explosions[i].radius >= explosions[i].maxRadius) {
@@ -1102,14 +1609,13 @@
                 x: explosionX,
                 y: explosionY,
                 radius: 0,
-                maxRadius: 50,
-                color: '#ff6b00'
+                maxRadius: missile.tracking ? 60 : 50,
+                color: missile.tracking ? '#ff0000' : '#ff6b00'
             });
             
-            const explosionRadius = 80;
+            const explosionRadius = missile.tracking ? 90 : 80;
             const damage = missile.damage;
             
-            // ضرر على الطائرة
             if (jet && missile.fromEnemy) {
                 const distanceToJet = Math.sqrt(
                     (jet.x - explosionX) ** 2 + 
@@ -1125,23 +1631,6 @@
                 }
             }
             
-            // ضرر على الجنود
-            for (let i = soldiers.length - 1; i >= 0; i--) {
-                const soldier = soldiers[i];
-                const distance = Math.sqrt(
-                    (soldier.x - explosionX) ** 2 + 
-                    (soldier.y - explosionY) ** 2
-                );
-                
-                if (distance < explosionRadius && missile.fromEnemy) {
-                    soldier.health -= damage;
-                    if (soldier.health <= 0) {
-                        soldiers.splice(i, 1);
-                    }
-                }
-            }
-            
-            // ضرر على الأعداء
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 const distance = Math.sqrt(
@@ -1152,8 +1641,30 @@
                 if (distance < explosionRadius && !missile.fromEnemy) {
                     enemy.health -= damage;
                     if (enemy.health <= 0) {
+                        if (enemy.goldValue) {
+                            spawnGoldPile(enemy.x, enemy.y, enemy.goldValue / 5);
+                        }
                         enemies.splice(i, 1);
                         showNotification('✓ تم تدمير عدو!');
+                    }
+                }
+            }
+            
+            for (let i = soldiers.length - 1; i >= 0; i--) {
+                const soldier = soldiers[i];
+                const distance = Math.sqrt(
+                    (soldier.x - explosionX) ** 2 + 
+                    (soldier.y - explosionY) ** 2
+                );
+                
+                if (distance < explosionRadius && missile.fromEnemy) {
+                    soldier.health -= damage;
+                    if (soldier.health <= 0) {
+                        if (soldier.goldValue) {
+                            spawnGoldPile(soldier.x, soldier.y, soldier.goldValue / 5);
+                        }
+                        soldiers.splice(i, 1);
+                        showNotification('✗ فقدنا جندي!');
                     }
                 }
             }
@@ -1163,26 +1674,35 @@
             ctx.fillStyle = 'rgba(26, 60, 45, 0.3)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // رسم الأرض
             ctx.fillStyle = '#8B4513';
             ctx.fillRect(0, 450, canvas.width, canvas.height - 450);
             
-            // رسم العشب
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(0, 450, canvas.width, 10);
             
-            // رسم الأعداء الأذكياء
+            goldPiles.forEach(gold => {
+                if (!gold.collected) {
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.beginPath();
+                    ctx.arc(gold.x, gold.y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#f39c12';
+                    ctx.beginPath();
+                    ctx.arc(gold.x, gold.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
             enemies.forEach(enemy => {
                 ctx.fillStyle = enemy.color;
                 ctx.fillRect(enemy.x - enemy.width/2, enemy.y - enemy.height/2, enemy.width, enemy.height);
                 
-                // شريط الصحة
                 ctx.fillStyle = '#e74c3c';
                 ctx.fillRect(enemy.x - enemy.width/2, enemy.y - enemy.height/2 - 15, enemy.width, 4);
                 ctx.fillStyle = '#2ecc71';
                 ctx.fillRect(enemy.x - enemy.width/2, enemy.y - enemy.height/2 - 15, enemy.width * (enemy.health / enemy.maxHealth), 4);
                 
-                // عرض حالة الذكاء الاصطناعي
                 if (debugMode) {
                     ctx.fillStyle = 'white';
                     ctx.font = '10px Arial';
@@ -1191,13 +1711,16 @@
                 }
             });
             
-            // رسم الجنود
             soldiers.forEach(soldier => {
                 ctx.fillStyle = soldier.color;
                 ctx.fillRect(soldier.x - soldier.width/2, soldier.y - soldier.height/2, soldier.width, soldier.height);
+                
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(soldier.x - soldier.width/2, soldier.y - soldier.height/2 - 10, soldier.width, 3);
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(soldier.x - soldier.width/2, soldier.y - soldier.height/2 - 10, soldier.width * (soldier.health / soldier.maxHealth), 3);
             });
             
-            // رسم الطائرة
             if (jet) {
                 drawJet();
                 
@@ -1205,14 +1728,24 @@
                 ctx.fillRect(jet.x - 30, jet.y - 30, 60, 4);
                 ctx.fillStyle = '#2ecc71';
                 ctx.fillRect(jet.x - 30, jet.y - 30, 60 * (jet.health / jet.maxHealth), 4);
+                
+                if (jet.attackCooldown > 0) {
+                    ctx.fillStyle = '#f39c12';
+                    ctx.fillRect(jet.x - 30, jet.y - 35, 60 * (1 - jet.attackCooldown/45), 3);
+                }
+                
+                if (jet.upgradeLevel > 1) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`★${jet.upgradeLevel}`, jet.x, jet.y - 45);
+                }
             }
             
-            // رسم الصواريخ
             missiles.forEach(missile => {
                 drawMissile(missile);
             });
             
-            // رسم الانفجارات
             drawExplosions();
         }
 
@@ -1234,6 +1767,10 @@
             ctx.fillStyle = '#87CEEB';
             ctx.fillRect(-10, -8, 15, 8);
             
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(-25, -5, 5, 10);
+            ctx.fillRect(-25, -8, 5, 16);
+            
             ctx.restore();
         }
 
@@ -1241,7 +1778,14 @@
             const x = missile.x + (missile.targetX - missile.x) * missile.progress;
             const y = missile.y + (missile.targetY - missile.y) * missile.progress;
             
-            ctx.fillStyle = missile.fromEnemy ? '#e74c3c' : '#ff6b00';
+            if (missile.fromEnemy) {
+                ctx.fillStyle = '#e74c3c';
+            } else if (missile.tracking) {
+                ctx.fillStyle = '#ff0000';
+            } else {
+                ctx.fillStyle = '#ff6b00';
+            }
+            
             ctx.fillRect(x - 3, y - 2, 10, 4);
         }
 
@@ -1263,48 +1807,14 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // تحريك الطائرة بالفأرة
         canvas.addEventListener('mousemove', (e) => {
-            if (jet) {
+            if (jet && !isDragging && !attackMode && !moveMode) {
                 jet.targetX = e.clientX;
                 jet.targetY = e.clientY;
             }
         });
 
         window.addEventListener('resize', setupCanvas);
-
-        // الدوال المتبقية للسلوكيات
-        function executePositioning(enemy) {
-            // تنفيذ وضع التموضع للقناصة
-        }
-
-        function executeHiding(enemy) {
-            // تنفيذ وضع الاختباء
-        }
-
-        function executeAmbush(enemy) {
-            // تنفيذ الكمين
-        }
-
-        function executeSwarm(enemy) {
-            // تنفيذ هجوم السرب
-        }
-
-        function executeIdle(enemy) {
-            // السلوك الافتراضي
-        }
-
-        function coordinateSwarmAttack(enemy, target) {
-            // تنسيق هجوم السرب
-        }
-
-        function findSniperPosition(enemy, target) {
-            // إيجاد موقع مثالي للقناص
-            return {
-                x: target.x + 300,
-                y: target.y + 100
-            };
-        }
     </script>
 </body>
 </html>
