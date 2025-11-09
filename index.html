@@ -31,10 +31,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: 
-                radial-gradient(circle at 20% 80%, rgba(52, 152, 219, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(231, 76, 60, 0.1) 0%, transparent 50%),
-                linear-gradient(135deg, #1a3c2d 0%, #2c3e50 100%);
+            background: #1a3c2d;
         }
         
         #startScreen {
@@ -43,7 +40,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(12, 26, 37, 0.95) 0%, rgba(26, 60, 45, 0.9) 100%);
+            background: rgba(12, 26, 37, 0.95);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -52,694 +49,287 @@
         }
         
         .mainTitle {
-            font-size: 4em;
+            font-size: 3em;
             font-weight: bold;
-            background: linear-gradient(45deg, #e74c3c, #f1c40f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #e74c3c;
             margin-bottom: 10px;
         }
         
         .startButton {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            background: #e74c3c;
             color: white;
             border: none;
-            padding: 20px 50px;
-            font-size: 1.5em;
-            border-radius: 50px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 8px;
             cursor: pointer;
             margin: 10px;
         }
 
-        #uiOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        
         #battlePanel {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 15px;
-            border-radius: 15px;
-            border: 2px solid #e74c3c;
-            pointer-events: auto;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
             display: none;
         }
         
         button {
-            background: #e74c3c;
+            background: #3498db;
             color: white;
             border: none;
-            padding: 10px 15px;
-            margin: 5px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 3px;
+            border-radius: 5px;
             cursor: pointer;
         }
 
-        .health-bar {
-            width: 100%;
-            height: 4px;
-            background: #e74c3c;
-            border-radius: 2px;
-            margin-top: 3px;
-            overflow: hidden;
-        }
-        
-        .health-fill {
-            height: 100%;
-            background: #2ecc71;
-            transition: width 0.3s;
-        }
-
-        .targeting-circle {
+        .target-circle {
             position: absolute;
-            border: 3px dashed #e74c3c;
+            border: 2px solid red;
             border-radius: 50%;
             pointer-events: none;
-            animation: pulse 1.5s infinite;
-            box-shadow: 0 0 20px #e74c3c;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-        }
-
-        .missile-trail {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background: #ff6b00;
-            border-radius: 50%;
-            pointer-events: none;
-            box-shadow: 0 0 15px #ff0000;
-            animation: trailGlow 0.3s infinite alternate;
-        }
-
-        @keyframes trailGlow {
-            0% { box-shadow: 0 0 10px #ff0000; }
-            100% { box-shadow: 0 0 20px #ff6b00; }
-        }
-
-        .cluster-explosion {
-            position: absolute;
-            pointer-events: none;
-            animation: clusterExplode 0.8s ease-out;
-        }
-
-        @keyframes clusterExplode {
-            0% { transform: scale(0); opacity: 1; }
-            50% { transform: scale(1.5); opacity: 0.8; }
-            100% { transform: scale(2); opacity: 0; }
-        }
-
-        .damage-text {
-            position: absolute;
-            color: #ff0000;
-            font-weight: bold;
-            font-size: 16px;
-            pointer-events: none;
-            animation: damageFloat 1s ease-out forwards;
-        }
-
-        @keyframes damageFloat {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-40px); opacity: 0; }
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <div id="startScreen">
-            <div class="mainTitle">WAR LORDS</div>
-            <button class="startButton" onclick="startGame()">🚀 ابدأ المعركة</button>
+            <div class="mainTitle">طائرة نفاثة</div>
+            <button class="startButton" onclick="startGame()">ابدأ اللعبة</button>
         </div>
         
         <canvas id="battleScreen"></canvas>
         
-        <div id="uiOverlay">
-            <div id="battlePanel">
-                <h3>⚔️ الجيش</h3>
-                <button onclick="battle.recruitUnit('jetfighter')">🛩️ طائرة نفاثة (800 ذهب)</button>
-                <div style="margin-top: 10px; font-size: 0.9em; color: #f1c40f;">
-                    💥 تطلق صواريخ عنقودية مدمرة!
-                </div>
-            </div>
+        <div id="battlePanel">
+            <button onclick="createJet()">طائرة نفاثة</button>
         </div>
     </div>
 
     <script>
-        let battle;
+        let canvas, ctx;
+        let jet = null;
+        let missiles = [];
+        let enemies = [];
+        let targetCircle = null;
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('battleScreen').style.display = 'block';
             document.getElementById('battlePanel').style.display = 'block';
             
-            battle = new BattleGame();
-            battle.start();
-        }
-
-        function createTargetingCircle(x, y, radius) {
-            const circle = document.createElement('div');
-            circle.className = 'targeting-circle';
-            circle.style.width = (radius * 2) + 'px';
-            circle.style.height = (radius * 2) + 'px';
-            circle.style.left = (x - radius) + 'px';
-            circle.style.top = (y - radius) + 'px';
-            document.getElementById('gameContainer').appendChild(circle);
+            canvas = document.getElementById('battleScreen');
+            ctx = canvas.getContext('2d');
             
-            return circle;
-        }
-
-        function createMissileTrail(x, y) {
-            const trail = document.createElement('div');
-            trail.className = 'missile-trail';
-            trail.style.left = x + 'px';
-            trail.style.top = y + 'px';
-            document.getElementById('gameContainer').appendChild(trail);
+            setupCanvas();
+            createEnemies();
+            gameLoop();
             
-            return trail;
+            // إضافة مستمع حدث للزر
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && jet) {
+                    fireMissile();
+                }
+            });
         }
 
-        function createClusterExplosion(x, y, size = 60) {
-            const explosion = document.createElement('div');
-            explosion.className = 'cluster-explosion';
-            explosion.style.width = size + 'px';
-            explosion.style.height = size + 'px';
-            explosion.style.left = (x - size/2) + 'px';
-            explosion.style.top = (y - size/2) + 'px';
-            explosion.style.background = 'radial-gradient(circle, #ff6b00, #ff0000, #ff5500, transparent)';
-            explosion.style.borderRadius = '50%';
-            document.getElementById('gameContainer').appendChild(explosion);
+        function setupCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createJet() {
+            jet = {
+                x: 100,
+                y: 200,
+                width: 60,
+                height: 20,
+                speed: 3,
+                color: '#3498db',
+                targetX: 100,
+                targetY: 200
+            };
             
-            setTimeout(() => {
-                if (document.body.contains(explosion)) {
-                    document.body.removeChild(explosion);
-                }
-            }, 800);
+            // إنشاء دائرة الاستهداف
+            createTargetCircle();
         }
 
-        function createDamageText(x, y, text) {
-            const damageText = document.createElement('div');
-            damageText.className = 'damage-text';
-            damageText.textContent = text;
-            damageText.style.left = x + 'px';
-            damageText.style.top = y + 'px';
-            document.getElementById('gameContainer').appendChild(damageText);
+        function createTargetCircle() {
+            if (targetCircle) {
+                targetCircle.remove();
+            }
             
-            setTimeout(() => {
-                if (document.body.contains(damageText)) {
-                    document.body.removeChild(damageText);
-                }
-            }, 1000);
+            targetCircle = document.createElement('div');
+            targetCircle.className = 'target-circle';
+            targetCircle.style.width = '200px';
+            targetCircle.style.height = '200px';
+            document.getElementById('gameContainer').appendChild(targetCircle);
+            
+            updateTargetCircle();
         }
 
-        // 🎮 نظام المعارك مع الطائرة النفاثة
-        class BattleGame {
-            constructor() {
-                this.canvas = document.getElementById('battleScreen');
-                this.ctx = this.canvas.getContext('2d');
-                this.units = new Map();
-                this.missiles = [];
-                this.selectedUnits = [];
-                this.targetingCircles = new Map();
-                
-                this.setupCanvas();
-                this.createInitialUnits();
+        function updateTargetCircle() {
+            if (jet && targetCircle) {
+                targetCircle.style.left = (jet.x - 100) + 'px';
+                targetCircle.style.top = (jet.y - 100) + 'px';
             }
+        }
 
-            setupCanvas() {
-                this.canvas.width = window.innerWidth;
-                this.canvas.height = window.innerHeight;
-            }
-
-            createInitialUnits() {
-                // 🎯 وحدات اللاعب
-                this.createUnit('soldier', 200, 450, 'blue');
-                this.createUnit('tank', 150, 400, 'blue');
-                
-                // 🎯 وحدات العدو
-                this.createUnit('soldier', 700, 450, 'red');
-                this.createUnit('soldier', 780, 450, 'red');
-                this.createUnit('tank', 850, 400, 'red');
-            }
-
-            createUnit(type, x, y, team) {
-                const id = `unit_${Date.now()}_${Math.random()}`;
-                
-                const unitConfig = {
-                    soldier: { health: 100, speed: 2, range: 60, attack: 20 },
-                    tank: { health: 300, speed: 1, range: 150, attack: 40 },
-                    jetfighter: { 
-                        health: 200, 
-                        speed: 4, 
-                        range: 400, 
-                        attack: 100,
-                        altitude: 80,
-                        missileCooldown: 3000,
-                        lastMissile: 0
-                    }
-                };
-                
-                const config = unitConfig[type];
-                const unit = {
-                    id, type, x, y, team,
-                    targetX: x, targetY: y - (config.altitude || 0),
-                    health: config.health,
-                    maxHealth: config.health,
-                    speed: config.speed,
-                    attack: config.attack,
-                    range: config.range,
-                    selected: false,
-                    isAttacking: false,
-                    target: null,
-                    altitude: config.altitude || 0,
-                    missileCooldown: config.missileCooldown,
-                    lastMissile: config.lastMissile
-                };
-                
-                this.units.set(id, unit);
-                
-                // إذا كانت طائرة نفاثة، أنشئ دائرة الاستهداف
-                if (type === 'jetfighter') {
-                    this.createTargetingForJet(unit);
-                }
-                
-                return unit;
-            }
-
-            createTargetingForJet(jet) {
-                const circle = createTargetingCircle(jet.x, jet.y, jet.range);
-                this.targetingCircles.set(jet.id, circle);
-            }
-
-            recruitUnit(unitType) {
-                if (unitType === 'jetfighter') {
-                    this.createUnit('jetfighter', 300, 300, 'blue');
-                }
-            }
-
-            start() {
-                this.setupEventListeners();
-                this.gameLoop();
-            }
-
-            setupEventListeners() {
-                this.canvas.addEventListener('click', (e) => this.handleClick(e));
-                
-                // اختصارات لوحة المفاتيح
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === '4') this.recruitUnit('jetfighter');
-                    if (e.key === ' ') this.fireClusterMissile();
+        function createEnemies() {
+            for (let i = 0; i < 3; i++) {
+                enemies.push({
+                    x: 600 + i * 80,
+                    y: 400,
+                    width: 30,
+                    height: 30,
+                    color: '#e74c3c',
+                    health: 100
                 });
             }
+        }
 
-            handleClick(e) {
-                const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                let clickedUnit = null;
-                for (const unit of this.units.values()) {
-                    const distance = Math.sqrt((unit.x - x) ** 2 + (unit.y - unit.altitude - y) ** 2);
-                    if (distance < 25) {
-                        clickedUnit = unit;
-                        break;
-                    }
-                }
-                
-                if (clickedUnit) {
-                    if (clickedUnit.team === 'blue') {
-                        this.selectUnit(clickedUnit);
-                    } else if (this.selectedUnits.length > 0) {
-                        this.attackUnit(clickedUnit);
-                    }
-                } else if (this.selectedUnits.length > 0) {
-                    this.moveSelectedUnits(x, y);
-                }
-            }
+        function fireMissile() {
+            if (!jet) return;
+            
+            missiles.push({
+                x: jet.x + 50,
+                y: jet.y,
+                targetX: jet.targetX,
+                targetY: jet.targetY,
+                speed: 5,
+                progress: 0
+            });
+        }
 
-            selectUnit(unit) {
-                this.clearSelection();
-                unit.selected = true;
-                this.selectedUnits.push(unit);
-            }
-
-            clearSelection() {
-                this.selectedUnits.forEach(unit => unit.selected = false);
-                this.selectedUnits = [];
-            }
-
-            attackUnit(targetUnit) {
-                this.selectedUnits.forEach(unit => {
-                    unit.target = targetUnit;
-                    unit.isAttacking = true;
-                    unit.targetX = targetUnit.x;
-                    unit.targetY = targetUnit.y;
-                });
-            }
-
-            moveSelectedUnits(x, y) {
-                this.selectedUnits.forEach(unit => {
-                    unit.targetX = x + (Math.random() * 80 - 40);
-                    unit.targetY = y - unit.altitude + (Math.random() * 80 - 40);
-                    unit.target = null;
-                    unit.isAttacking = false;
-                });
-            }
-
-            fireClusterMissile() {
-                const now = Date.now();
-                
-                this.selectedUnits.forEach(unit => {
-                    if (unit.type === 'jetfighter' && unit.target && 
-                        now - unit.lastMissile >= unit.missileCooldown) {
-                        
-                        unit.lastMissile = now;
-                        this.launchClusterMissile(unit, unit.target);
-                    }
-                });
-            }
-
-            launchClusterMissile(fromUnit, toUnit) {
-                const missile = {
-                    id: `missile_${Date.now()}`,
-                    fromX: fromUnit.x,
-                    fromY: fromUnit.y - fromUnit.altitude,
-                    toX: toUnit.x,
-                    toY: toUnit.y,
-                    progress: 0,
-                    speed: 0.02,
-                    fromUnit: fromUnit,
-                    targetUnit: toUnit
-                };
-                
-                this.missiles.push(missile);
-                
-                // إطلاق الصواريخ العنقودية
-                setTimeout(() => this.explodeClusterMissile(missile), 1000);
-            }
-
-            explodeClusterMissile(missile) {
-                const explosionX = missile.fromX + (missile.toX - missile.fromX) * missile.progress;
-                const explosionY = missile.fromY + (missile.toY - missile.fromY) * missile.progress;
-                
-                createClusterExplosion(explosionX, explosionY, 80);
-                
-                // ضرر على منطقة واسعة
-                const splashRadius = 120;
-                for (const unit of this.units.values()) {
-                    if (unit.team === 'red' && unit.health > 0) {
-                        const distance = Math.sqrt((unit.x - explosionX) ** 2 + (unit.y - explosionY) ** 2);
-                        if (distance < splashRadius) {
-                            const damage = Math.floor(missile.fromUnit.attack * (1 - distance/splashRadius));
-                            unit.health -= damage;
-                            createDamageText(unit.x, unit.y, `💥 ${damage}`);
-                            
-                            if (unit.health <= 0) {
-                                this.units.delete(unit.id);
-                                createClusterExplosion(unit.x, unit.y, 40);
-                            }
-                        }
-                    }
-                }
-            }
-
-            update() {
-                // تحديث حركة الوحدات
-                for (const unit of this.units.values()) {
-                    this.updateUnit(unit);
-                }
-                
-                // تحديث الطائرات النفاثة
-                this.updateJets();
-                
-                // تحديث الصواريخ
-                this.updateMissiles();
-                
-                // تحديث دوائر الاستهداف
-                this.updateTargetingCircles();
-            }
-
-            updateUnit(unit) {
-                const dx = unit.targetX - unit.x;
-                const dy = unit.targetY - unit.y;
+        function update() {
+            // تحريك الطائرة
+            if (jet) {
+                const dx = jet.targetX - jet.x;
+                const dy = jet.targetY - jet.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance > 2) {
-                    unit.x += (dx / distance) * Math.min(unit.speed, distance * 0.1);
-                    unit.y += (dy / distance) * Math.min(unit.speed, distance * 0.1);
-                }
-            }
-
-            updateJets() {
-                const now = Date.now();
-                
-                for (const unit of this.units.values()) {
-                    if (unit.type === 'jetfighter') {
-                        // حركة الطائرة بشكل دائري
-                        if (!unit.isAttacking) {
-                            unit.targetX = 400 + Math.cos(now * 0.001) * 200;
-                            unit.targetY = 200 + Math.sin(now * 0.001) * 100;
-                        }
-                        
-                        // إطلاق صواريخ تلقائي
-                        if (unit.target && now - unit.lastMissile >= unit.missileCooldown) {
-                            this.launchClusterMissile(unit, unit.target);
-                        }
-                    }
-                }
-            }
-
-            updateMissiles() {
-                for (let i = this.missiles.length - 1; i >= 0; i--) {
-                    const missile = this.missiles[i];
-                    missile.progress += missile.speed;
-                    
-                    // إنشاء أثر الصاروخ
-                    if (Math.random() < 0.3) {
-                        const trailX = missile.fromX + (missile.toX - missile.fromX) * missile.progress;
-                        const trailY = missile.fromY + (missile.toY - missile.fromY) * missile.progress;
-                        createMissileTrail(trailX, trailY);
-                    }
-                    
-                    if (missile.progress >= 1) {
-                        this.missiles.splice(i, 1);
-                    }
-                }
-            }
-
-            updateTargetingCircles() {
-                for (const [unitId, circle] of this.targetingCircles) {
-                    const unit = this.units.get(unitId);
-                    if (unit && unit.health > 0) {
-                        circle.style.left = (unit.x - unit.range) + 'px';
-                        circle.style.top = (unit.y - unit.altitude - unit.range) + 'px';
-                    } else {
-                        circle.remove();
-                        this.targetingCircles.delete(unitId);
-                    }
-                }
-            }
-
-            render() {
-                this.ctx.fillStyle = '#1a3c2d';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                this.drawGround();
-                this.drawUnits();
-                this.drawMissiles();
-                this.drawBattleInfo();
-            }
-
-            drawGround() {
-                this.ctx.fillStyle = '#8B4513';
-                this.ctx.fillRect(0, this.canvas.height - 100, this.canvas.width, 100);
-                
-                this.ctx.fillStyle = '#556B2F';
-                for (let i = 0; i < this.canvas.width; i += 30) {
-                    this.ctx.fillRect(i, this.canvas.height - 100, 15, 8);
-                }
-            }
-
-            drawUnits() {
-                for (const unit of this.units.values()) {
-                    this.drawUnit(unit);
-                }
-            }
-
-            drawUnit(unit) {
-                this.ctx.save();
-                this.ctx.translate(unit.x, unit.y - unit.altitude);
-                
-                if (unit.type === 'soldier') {
-                    this.drawSoldier(unit);
-                } else if (unit.type === 'tank') {
-                    this.drawTank(unit);
-                } else if (unit.type === 'jetfighter') {
-                    this.drawJetFighter(unit);
+                if (distance > 5) {
+                    jet.x += (dx / distance) * jet.speed;
+                    jet.y += (dy / distance) * jet.speed;
                 }
                 
-                // دائرة الاختيار
-                if (unit.selected) {
-                    this.ctx.strokeStyle = '#f1c40f';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.setLineDash([5, 3]);
-                    this.ctx.beginPath();
-                    this.ctx.arc(0, 0, 30, 0, Math.PI * 2);
-                    this.ctx.stroke();
-                    this.ctx.setLineDash([]);
+                updateTargetCircle();
+            }
+            
+            // تحريك الصواريخ
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                const missile = missiles[i];
+                missile.progress += 0.05;
+                
+                if (missile.progress >= 1) {
+                    // انفجار الصاروخ
+                    explodeMissile(missile);
+                    missiles.splice(i, 1);
                 }
-                
-                // شريط الصحة
-                this.drawHealthBar(unit);
-                
-                this.ctx.restore();
-            }
-
-            drawSoldier(unit) {
-                const color = unit.team === 'blue' ? '#3498db' : '#e74c3c';
-                const darkColor = unit.team === 'blue' ? '#2980b9' : '#c0392b';
-                
-                this.ctx.fillStyle = color;
-                this.ctx.fillRect(-8, -15, 16, 25);
-                
-                this.ctx.fillStyle = '#FFD700';
-                this.ctx.beginPath();
-                this.ctx.arc(0, -20, 6, 0, Math.PI * 2);
-                this.ctx.fill();
-                
-                this.ctx.fillStyle = darkColor;
-                this.ctx.beginPath();
-                this.ctx.arc(0, -20, 8, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
-
-            drawTank(unit) {
-                const color = unit.team === 'blue' ? '#3498db' : '#e74c3c';
-                const darkColor = unit.team === 'blue' ? '#2980b9' : '#c0392b';
-                
-                this.ctx.fillStyle = color;
-                this.ctx.fillRect(-18, -10, 36, 20);
-                
-                this.ctx.fillStyle = darkColor;
-                this.ctx.fillRect(-8, -20, 16, 15);
-                
-                this.ctx.fillStyle = '#2c3e50';
-                this.ctx.fillRect(0, -18, 25, 4);
-            }
-
-            drawJetFighter(unit) {
-                const color = unit.team === 'blue' ? '#3498db' : '#e74c3c';
-                const engineColor = unit.team === 'blue' ? '#2980b9' : '#c0392b';
-                
-                // الجسم الرئيسي (أكثر انسيابية)
-                this.ctx.fillStyle = color;
-                this.ctx.beginPath();
-                this.ctx.moveTo(-25, 0);
-                this.ctx.lineTo(20, 0);
-                this.ctx.lineTo(25, -4);
-                this.ctx.lineTo(30, 0);
-                this.ctx.lineTo(25, 4);
-                this.ctx.lineTo(20, 0);
-                this.ctx.closePath();
-                this.ctx.fill();
-                
-                // الأجنحة الخلفية
-                this.ctx.fillStyle = color;
-                this.ctx.fillRect(-15, -8, 30, 4);
-                this.ctx.fillRect(-15, 4, 30, 4);
-                
-                // المحركات النفاثة
-                this.ctx.fillStyle = engineColor;
-                this.ctx.fillRect(-22, -3, 8, 6);
-                this.ctx.fillRect(-22, -8, 4, 16);
-                
-                // تأثيرات المحركات
-                this.ctx.fillStyle = '#ff6b00';
-                this.ctx.fillRect(-30, -2, 8, 4);
-                this.ctx.fillStyle = '#ff0000';
-                this.ctx.fillRect(-35, -1, 5, 2);
-                
-                // قمرة القيادة
-                this.ctx.fillStyle = '#87CEEB';
-                this.ctx.beginPath();
-                this.ctx.arc(-5, 0, 4, 0, Math.PI * 2);
-                this.ctx.fill();
-                
-                // الصواريخ تحت الأجنحة
-                this.ctx.fillStyle = '#e74c3c';
-                this.ctx.fillRect(5, -6, 12, 3);
-                this.ctx.fillRect(5, 3, 12, 3);
-            }
-
-            drawHealthBar(unit) {
-                const healthRatio = unit.health / unit.maxHealth;
-                const barWidth = 35;
-                
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                this.ctx.fillRect(-barWidth/2, -35, barWidth, 6);
-                
-                if (healthRatio > 0.6) {
-                    this.ctx.fillStyle = '#2ecc71';
-                } else if (healthRatio > 0.3) {
-                    this.ctx.fillStyle = '#f39c12';
-                } else {
-                    this.ctx.fillStyle = '#e74c3c';
-                }
-                
-                this.ctx.fillRect(-barWidth/2, -35, barWidth * healthRatio, 6);
-            }
-
-            drawMissiles() {
-                this.ctx.fillStyle = '#ff0000';
-                for (const missile of this.missiles) {
-                    const x = missile.fromX + (missile.toX - missile.fromX) * missile.progress;
-                    const y = missile.fromY + (missile.toY - missile.fromY) * missile.progress;
-                    
-                    this.ctx.fillRect(x - 4, y - 2, 8, 4);
-                    
-                    // توهج الصاروخ
-                    this.ctx.fillStyle = 'rgba(255, 107, 0, 0.5)';
-                    this.ctx.beginPath();
-                    this.ctx.arc(x, y, 6, 0, Math.PI * 2);
-                    this.ctx.fill();
-                    this.ctx.fillStyle = '#ff0000';
-                }
-            }
-
-            drawBattleInfo() {
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                this.ctx.fillRect(10, 10, 300, 100);
-                
-                this.ctx.fillStyle = 'white';
-                this.ctx.font = '14px Arial';
-                this.ctx.fillText('🛩️ الطائرة النفاثة - صواريخ عنقودية مدمرة', 20, 30);
-                this.ctx.fillText('🎯 دائرة حمراء: مدى الصواريخ (400 بكسل)', 20, 50);
-                this.ctx.fillText('💥 اضغط المسافة لإطلاق الصواريخ العنقودية', 20, 70);
-                this.ctx.fillText('🔢 اضغط 4 لتجنيد طائرة نفاثة (800 ذهب)', 20, 90);
-            }
-
-            gameLoop() {
-                this.update();
-                this.render();
-                requestAnimationFrame(() => this.gameLoop());
             }
         }
 
-        window.addEventListener('resize', () => {
-            if (battle) {
-                battle.setupCanvas();
+        function explodeMissile(missile) {
+            const explosionX = missile.x + (missile.targetX - missile.x) * missile.progress;
+            const explosionY = missile.y + (missile.targetY - missile.y) * missile.progress;
+            
+            // ضرر على الأعداء في المدى
+            const explosionRadius = 80;
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                const distance = Math.sqrt(
+                    (enemy.x - explosionX) ** 2 + 
+                    (enemy.y - explosionY) ** 2
+                );
+                
+                if (distance < explosionRadius) {
+                    enemy.health -= 50;
+                    if (enemy.health <= 0) {
+                        enemies.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        function render() {
+            // مسح الشاشة
+            ctx.fillStyle = '#1a3c2d';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // رسم الأرض
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, 450, canvas.width, canvas.height - 450);
+            
+            // رسم الأعداء
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.color;
+                ctx.fillRect(enemy.x - 15, enemy.y - 15, 30, 30);
+                
+                // شريط الصحة
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(enemy.x - 15, enemy.y - 25, 30, 4);
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(enemy.x - 15, enemy.y - 25, 30 * (enemy.health / 100), 4);
+            });
+            
+            // رسم الطائرة
+            if (jet) {
+                drawJet();
+            }
+            
+            // رسم الصواريخ
+            missiles.forEach(missile => {
+                drawMissile(missile);
+            });
+        }
+
+        function drawJet() {
+            ctx.fillStyle = jet.color;
+            
+            // جسم الطائرة
+            ctx.fillRect(jet.x - 30, jet.y - 10, 60, 20);
+            
+            // الأجنحة
+            ctx.fillRect(jet.x - 15, jet.y - 20, 30, 10);
+            ctx.fillRect(jet.x - 15, jet.y + 10, 30, 10);
+            
+            // الذيل
+            ctx.fillRect(jet.x + 20, jet.y - 5, 15, 10);
+            
+            // قمرة القيادة
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(jet.x - 10, jet.y - 8, 15, 8);
+        }
+
+        function drawMissile(missile) {
+            const x = missile.x + (missile.targetX - missile.x) * missile.progress;
+            const y = missile.y + (missile.targetY - missile.y) * missile.progress;
+            
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(x - 3, y - 2, 10, 4);
+            
+            // توهج الصاروخ
+            ctx.fillStyle = '#ff6b00';
+            ctx.fillRect(x - 5, y - 1, 4, 2);
+        }
+
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // تحريك الطائرة بالفأرة
+        canvas.addEventListener('mousemove', (e) => {
+            if (jet) {
+                jet.targetX = e.clientX;
+                jet.targetY = e.clientY;
             }
         });
+
+        // إعادة تحجيم النافذة
+        window.addEventListener('resize', setupCanvas);
     </script>
 </body>
 </html>
