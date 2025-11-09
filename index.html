@@ -213,17 +213,35 @@
             z-index: 100;
             display: none;
         }
+        
+        .attack-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 8;
+        }
+        
+        #attackModePanel {
+            position: absolute;
+            bottom: 80px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <div id="startScreen">
             <div class="mainTitle">War Lords</div>
-            <div class="subTitle">معركة الجوية - الإصدار 2.0</div>
+            <div class="subTitle">معركة الجوية - الإصدار 3.0</div>
             <button class="startButton" onclick="startGame()">ابدأ اللعبة</button>
             <button class="startButton" onclick="showWhatsNew()">What's New!</button>
             <div class="controls-info">
-                استخدم الماوس لتحريك الطائرة | المسافة لإطلاق الصواريخ | انقر واسحب الوحدات
+                انقر على الطائرة ثم انقر على الهدف للهجوم | المسافة لإطلاق الصواريخ الحرة
             </div>
         </div>
         
@@ -231,10 +249,16 @@
         
         <div id="battlePanel">
             <button onclick="createJet()">طائرة نفاثة</button>
-            <button onclick="fireMissile()">إطلاق صاروخ</button>
+            <button onclick="fireMissile()">إطلاق صاروخ حر</button>
             <button onclick="createEnemies()">أعداء جدد</button>
             <button onclick="createSoldiers()">جنود جدد</button>
             <button onclick="showWhatsNew()">What's New!</button>
+        </div>
+        
+        <div id="attackModePanel">
+            <div style="color: #e74c3c; margin-bottom: 5px;">وضع الهجوم النشط</div>
+            <div>انقر على أي هدف للهجوم</div>
+            <button onclick="cancelAttackMode()">إلغاء الهجوم</button>
         </div>
         
         <div id="infoPanel">
@@ -245,15 +269,15 @@
         </div>
         
         <div id="whatsNewPanel">
-            <h2>What's New! - الإصدار 2.0</h2>
+            <h2>What's New! - الإصدار 3.0</h2>
             <ul>
-                <li>🎮 نظام اختيار جديد للوحدات - انقر على أي وحدة لتحديدها</li>
-                <li>🔄 سحب وإسقاط الوحدات - اسحب الوحدات إلى مواقع جديدة</li>
-                <li>🎯 هجوم تلقائي - الوحدات المهاجمة تهاجم الأعداء تلقائياً</li>
-                <li>🖱️ معلومات الوحدة - عرض معلومات مفصلة عن الوحدة المحددة</li>
-                <li>🎨 خلفيات جديدة محسنة للعبة</li>
-                <li>🔊 تأثيرات بصرية محسنة</li>
-                <li>📱 واجهة مستخدم أكثر تفاعلية</li>
+                <li>🎯 نظام هجوم عن بعد للطائرة - انقر على الهدف من أي مكان!</li>
+                <li>🚀 صواريخ ذكية تتبع الأهداف تلقائياً</li>
+                <li>🎮 تحكم محسن - انقر على الطائرة ثم انقر على الهدف</li>
+                <li>📡 خطوط هجوم مرئية توضح مسار الصواريخ</li>
+                <li>⚡ وضع هجوم خاص يظهر عند اختيار الطائرة</li>
+                <li>🎯 دقة إصابة محسنة للصواريخ</li>
+                <li>🔊 إشعارات تفاعلية جديدة</li>
             </ul>
             <button class="closeButton" onclick="closeWhatsNew()">إغلاق</button>
         </div>
@@ -276,6 +300,8 @@
         let dragOffsetX = 0;
         let dragOffsetY = 0;
         let selectionBox = null;
+        let attackMode = false;
+        let attackLines = [];
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
@@ -295,7 +321,7 @@
             // إضافة مستمعات الأحداث
             document.addEventListener('keydown', (e) => {
                 if (e.code === 'Space' && jet) {
-                    fireMissile();
+                    fireFreeMissile();
                 }
             });
             
@@ -341,7 +367,10 @@
                 type: 'jet',
                 name: 'طائرة نفاثة',
                 health: 100,
-                maxHealth: 100
+                maxHealth: 100,
+                attackRange: 800, // مدى هجوم كبير
+                attackDamage: 75,
+                attackCooldown: 0
             };
             
             createTargetCircle();
@@ -437,6 +466,15 @@
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
+            if (attackMode && jet) {
+                // في وضع الهجوم، ابحث عن هدف وانطلق تجاهه
+                let target = findTargetAt(x, y);
+                if (target) {
+                    launchTargetedAttack(target);
+                    return;
+                }
+            }
+            
             // البحث عن وحدة تم النقر عليها
             let clickedUnit = null;
             
@@ -469,9 +507,143 @@
             if (clickedUnit) {
                 selectUnit(clickedUnit);
                 showNotification(`✓ تم اختيار ${clickedUnit.name}`);
+                
+                // إذا كانت الطائرة، تفعيل وضع الهجوم
+                if (clickedUnit.type === 'jet') {
+                    activateAttackMode();
+                } else {
+                    deactivateAttackMode();
+                }
             } else {
                 deselectUnit();
+                deactivateAttackMode();
             }
+        }
+
+        function findTargetAt(x, y) {
+            // البحث عن جنود
+            for (const soldier of soldiers) {
+                if (isPointInUnit(x, y, soldier)) {
+                    return soldier;
+                }
+            }
+            
+            // البحث عن دبابات
+            for (const enemy of enemies) {
+                if (isPointInUnit(x, y, enemy)) {
+                    return enemy;
+                }
+            }
+            
+            return null;
+        }
+
+        function launchTargetedAttack(target) {
+            if (!jet || jet.attackCooldown > 0) return;
+            
+            // حساب المسافة
+            const distance = Math.sqrt(
+                (jet.x - target.x) ** 2 + 
+                (jet.y - target.y) ** 2
+            );
+            
+            // التحقق من المدى
+            if (distance > jet.attackRange) {
+                showNotification('✗ الهدف خارج المدى!');
+                return;
+            }
+            
+            // إطلاق صاروخ موجه
+            missiles.push({
+                x: jet.x,
+                y: jet.y,
+                targetX: target.x,
+                targetY: target.y,
+                speed: 6,
+                progress: 0,
+                tracking: true,
+                target: target,
+                damage: jet.attackDamage
+            });
+            
+            // إضافة خط الهجوم
+            addAttackLine(jet, target);
+            
+            // تأخير بين الهجمات
+            jet.attackCooldown = 45;
+            
+            showNotification(`🚀 ${jet.name} تهاجم ${target.name}!`);
+            
+            // إلغاء وضع الهجوم بعد الهجوم
+            deactivateAttackMode();
+            deselectUnit();
+        }
+
+        function addAttackLine(fromUnit, toUnit) {
+            const line = document.createElement('div');
+            line.className = 'attack-line';
+            line.style.left = fromUnit.x + 'px';
+            line.style.top = fromUnit.y + 'px';
+            line.style.width = '2px';
+            line.style.height = Math.sqrt(
+                (toUnit.x - fromUnit.x) ** 2 + 
+                (toUnit.y - fromUnit.y) ** 2
+            ) + 'px';
+            line.style.transform = `rotate(${Math.atan2(toUnit.y - fromUnit.y, toUnit.x - fromUnit.x)}rad)`;
+            line.style.transformOrigin = '0 0';
+            line.style.background = 'linear-gradient(to right, #ff0000, #ff6b00)';
+            document.getElementById('gameContainer').appendChild(line);
+            
+            attackLines.push(line);
+            
+            // إزالة الخط بعد ثانية
+            setTimeout(() => {
+                if (line.parentNode) {
+                    line.parentNode.removeChild(line);
+                }
+                const index = attackLines.indexOf(line);
+                if (index > -1) {
+                    attackLines.splice(index, 1);
+                }
+            }, 1000);
+        }
+
+        function activateAttackMode() {
+            attackMode = true;
+            document.getElementById('attackModePanel').style.display = 'block';
+            showNotification('🎯 وضع الهجوم نشط - انقر على أي هدف للهجوم!');
+        }
+
+        function deactivateAttackMode() {
+            attackMode = false;
+            document.getElementById('attackModePanel').style.display = 'none';
+        }
+
+        function cancelAttackMode() {
+            deactivateAttackMode();
+            showNotification('تم إلغاء وضع الهجوم');
+        }
+
+        function fireFreeMissile() {
+            if (!jet) return;
+            
+            missiles.push({
+                x: jet.x + 50,
+                y: jet.y,
+                targetX: jet.targetX,
+                targetY: jet.targetY,
+                speed: 5,
+                progress: 0,
+                tracking: false,
+                damage: 50
+            });
+            
+            updateInfoPanel();
+            showNotification('🚀 تم إطلاق صاروخ حر');
+        }
+
+        function fireMissile() {
+            fireFreeMissile();
         }
 
         function isPointInUnit(x, y, unit) {
@@ -517,6 +689,7 @@
                 <strong>${unit.name}</strong><br>
                 الصحة: ${unit.health}/${unit.maxHealth}<br>
                 ${unit.attackDamage ? `الضرر: ${unit.attackDamage}` : ''}
+                ${unit.attackRange ? `المدى: ${unit.attackRange}` : ''}
             `;
             unitInfo.style.left = (unit.x + 20) + 'px';
             unitInfo.style.top = (unit.y - 40) + 'px';
@@ -524,7 +697,7 @@
         }
 
         function startDragging(e) {
-            if (!selectedUnit) return;
+            if (!selectedUnit || selectedUnit.type === 'jet') return;
             
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -538,7 +711,7 @@
         }
 
         function handleDragging(e) {
-            if (!isDragging || !selectedUnit) return;
+            if (!isDragging || !selectedUnit || selectedUnit.type === 'jet') return;
             
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -559,24 +732,9 @@
 
         function stopDragging() {
             isDragging = false;
-            if (selectedUnit) {
+            if (selectedUnit && selectedUnit.type !== 'jet') {
                 showNotification(`✓ تم نقل ${selectedUnit.name} إلى موقع جديد`);
             }
-        }
-
-        function fireMissile() {
-            if (!jet) return;
-            
-            missiles.push({
-                x: jet.x + 50,
-                y: jet.y,
-                targetX: jet.targetX,
-                targetY: jet.targetY,
-                speed: 5,
-                progress: 0
-            });
-            
-            updateInfoPanel();
         }
 
         function update() {
@@ -591,12 +749,24 @@
                     jet.y += (dy / distance) * jet.speed;
                 }
                 
+                // تحديث تأخير الهجوم
+                if (jet.attackCooldown > 0) {
+                    jet.attackCooldown--;
+                }
+                
                 updateTargetCircle();
             }
             
             // تحريك الصواريخ
             for (let i = missiles.length - 1; i >= 0; i--) {
                 const missile = missiles[i];
+                
+                if (missile.tracking && missile.target) {
+                    // تحديث الهدف للصواريخ المتعقبة
+                    missile.targetX = missile.target.x;
+                    missile.targetY = missile.target.y;
+                }
+                
                 missile.progress += 0.05;
                 
                 if (missile.progress >= 1) {
@@ -705,17 +875,16 @@
                 x: explosionX,
                 y: explosionY,
                 radius: 0,
-                maxRadius: 50,
-                color: '#ff6b00'
+                maxRadius: missile.tracking ? 60 : 50,
+                color: missile.tracking ? '#ff0000' : '#ff6b00'
             });
             
             // ضرر على الأعداء في المدى
-            const explosionRadius = 80;
-            const damage = missile.fromSoldier ? missile.damage : 
-                          missile.fromTank ? missile.damage : 50;
+            const explosionRadius = missile.tracking ? 90 : 80;
+            const damage = missile.damage;
             
             // ضرر على الطائرة
-            if (jet && !missile.fromSoldier && !missile.fromTank) {
+            if (jet && !missile.fromSoldier && !missile.fromTank && !missile.tracking) {
                 const distanceToJet = Math.sqrt(
                     (jet.x - explosionX) ** 2 + 
                     (jet.y - explosionY) ** 2
@@ -738,7 +907,7 @@
                     (enemy.y - explosionY) ** 2
                 );
                 
-                if (distance < explosionRadius && (missile.fromSoldier || !missile.fromTank)) {
+                if (distance < explosionRadius && (missile.fromSoldier || missile.tracking || !missile.fromTank)) {
                     enemy.health -= damage;
                     if (enemy.health <= 0) {
                         enemies.splice(i, 1);
@@ -755,7 +924,7 @@
                     (soldier.y - explosionY) ** 2
                 );
                 
-                if (distance < explosionRadius && (missile.fromTank || !missile.fromSoldier)) {
+                if (distance < explosionRadius && (missile.fromTank || (!missile.fromSoldier && !missile.tracking))) {
                     soldier.health -= damage;
                     if (soldier.health <= 0) {
                         soldiers.splice(i, 1);
@@ -829,6 +998,12 @@
                 ctx.fillRect(jet.x - 30, jet.y - 30, 60, 4);
                 ctx.fillStyle = '#2ecc71';
                 ctx.fillRect(jet.x - 30, jet.y - 30, 60 * (jet.health / jet.maxHealth), 4);
+                
+                // شريط تأخير الهجوم
+                if (jet.attackCooldown > 0) {
+                    ctx.fillStyle = '#f39c12';
+                    ctx.fillRect(jet.x - 30, jet.y - 35, 60 * (1 - jet.attackCooldown/45), 3);
+                }
             }
             
             // رسم الصواريخ
@@ -881,15 +1056,18 @@
                 ctx.fillStyle = '#9b59b6';
             } else if (missile.fromTank) {
                 ctx.fillStyle = '#c0392b';
-            } else {
+            } else if (missile.tracking) {
                 ctx.fillStyle = '#ff0000';
+            } else {
+                ctx.fillStyle = '#ff6b00';
             }
             
             ctx.fillRect(x - 3, y - 2, 10, 4);
             
             // توهج الصاروخ
             ctx.fillStyle = missile.fromSoldier ? '#8e44ad' : 
-                           missile.fromTank ? '#e74c3c' : '#ff6b00';
+                           missile.fromTank ? '#e74c3c' : 
+                           missile.tracking ? '#ff4444' : '#ff6b00';
             ctx.fillRect(x - 5, y - 1, 4, 2);
         }
 
@@ -927,7 +1105,7 @@
 
         // تحريك الطائرة بالفأرة
         canvas.addEventListener('mousemove', (e) => {
-            if (jet && !isDragging) {
+            if (jet && !isDragging && !attackMode) {
                 jet.targetX = e.clientX;
                 jet.targetY = e.clientY;
             }
