@@ -53,6 +53,13 @@
             font-weight: bold;
             color: #e74c3c;
             margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subTitle {
+            font-size: 1.5em;
+            color: #3498db;
+            margin-bottom: 30px;
         }
         
         .startButton {
@@ -64,6 +71,12 @@
             border-radius: 8px;
             cursor: pointer;
             margin: 10px;
+            transition: all 0.3s;
+        }
+        
+        .startButton:hover {
+            background: #c0392b;
+            transform: scale(1.05);
         }
 
         #battlePanel {
@@ -74,6 +87,18 @@
             padding: 10px;
             border-radius: 8px;
             display: none;
+            z-index: 100;
+        }
+        
+        #infoPanel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
         }
         
         button {
@@ -84,6 +109,11 @@
             margin: 3px;
             border-radius: 5px;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #2980b9;
         }
 
         .target-circle {
@@ -91,6 +121,13 @@
             border: 2px solid red;
             border-radius: 50%;
             pointer-events: none;
+            z-index: 10;
+        }
+        
+        .controls-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #95a5a6;
         }
     </style>
 </head>
@@ -98,13 +135,26 @@
     <div id="gameContainer">
         <div id="startScreen">
             <div class="mainTitle">طائرة نفاثة</div>
+            <div class="subTitle">War Lords - معركة الجوية</div>
             <button class="startButton" onclick="startGame()">ابدأ اللعبة</button>
+            <div class="controls-info">
+                استخدم الماوس لتحريك الطائرة | المسافة لإطلاق الصواريخ
+            </div>
         </div>
         
         <canvas id="battleScreen"></canvas>
         
         <div id="battlePanel">
             <button onclick="createJet()">طائرة نفاثة</button>
+            <button onclick="fireMissile()">إطلاق صاروخ</button>
+            <button onclick="createEnemies()">أعداء جدد</button>
+            <button onclick="createSoldiers()">جنود جدد</button>
+        </div>
+        
+        <div id="infoPanel">
+            <div>الصواريخ: <span id="missileCount">0</span></div>
+            <div>الأعداء: <span id="enemyCount">0</span></div>
+            <div>الجنود: <span id="soldierCount">0</span></div>
         </div>
     </div>
 
@@ -113,18 +163,25 @@
         let jet = null;
         let missiles = [];
         let enemies = [];
+        let soldiers = [];
+        let explosions = [];
         let targetCircle = null;
+        let gameStarted = false;
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('battlePanel').style.display = 'block';
+            document.getElementById('infoPanel').style.display = 'block';
             
             canvas = document.getElementById('battleScreen');
             ctx = canvas.getContext('2d');
             
             setupCanvas();
+            createJet();
             createEnemies();
+            createSoldiers();
             gameLoop();
+            gameStarted = true;
             
             // إضافة مستمع حدث للزر
             document.addEventListener('keydown', (e) => {
@@ -177,16 +234,57 @@
         }
 
         function createEnemies() {
-            for (let i = 0; i < 3; i++) {
+            enemies = []; // إعادة تعيين الأعداء
+            
+            const tankTypes = [
+                { type: "heavy", color: "#c0392b", health: 150, size: 35 },
+                { type: "light", color: "#e74c3c", health: 80, size: 25 }
+            ];
+            
+            for (let i = 0; i < 4; i++) {
+                const tankType = tankTypes[i % 2];
                 enemies.push({
-                    x: 600 + i * 80,
+                    x: 600 + i * 100,
                     y: 400,
-                    width: 30,
-                    height: 30,
-                    color: '#e74c3c',
-                    health: 100
+                    width: tankType.size,
+                    height: tankType.size,
+                    color: tankType.color,
+                    type: tankType.type,
+                    health: tankType.health,
+                    maxHealth: tankType.health
                 });
             }
+            
+            updateInfoPanel();
+        }
+
+        function createSoldiers() {
+            soldiers = []; // إعادة تعيين الجنود
+            
+            const soldierTypes = [
+                { type: "bazooka", color: "#8e44ad", range: 150, damage: 30, name: "بازوكا" },
+                { type: "machinegun", color: "#f39c12", range: 100, damage: 10, name: "رشاش" }
+            ];
+            
+            for (let i = 0; i < 6; i++) {
+                const soldierType = soldierTypes[i % 2];
+                soldiers.push({
+                    x: 700 + i * 60,
+                    y: 430,
+                    width: 20,
+                    height: 25,
+                    color: soldierType.color,
+                    type: soldierType.type,
+                    name: soldierType.name,
+                    range: soldierType.range,
+                    damage: soldierType.damage,
+                    health: 50,
+                    maxHealth: 50,
+                    cooldown: 0
+                });
+            }
+            
+            updateInfoPanel();
         }
 
         function fireMissile() {
@@ -200,6 +298,8 @@
                 speed: 5,
                 progress: 0
             });
+            
+            updateInfoPanel();
         }
 
         function update() {
@@ -228,14 +328,80 @@
                     missiles.splice(i, 1);
                 }
             }
+            
+            // تحديث الجنود
+            soldiers.forEach(soldier => {
+                if (soldier.cooldown > 0) {
+                    soldier.cooldown--;
+                }
+                
+                // إطلاق النار تلقائياً على الطائرة
+                if (jet && soldier.cooldown === 0) {
+                    const distance = Math.sqrt(
+                        (soldier.x - jet.x) ** 2 + 
+                        (soldier.y - jet.y) ** 2
+                    );
+                    
+                    if (distance < soldier.range) {
+                        // إطلاق النار على الطائرة
+                        soldier.cooldown = 60; // تأخير بين الطلقات
+                        
+                        // إضافة رصاصة
+                        missiles.push({
+                            x: soldier.x,
+                            y: soldier.y,
+                            targetX: jet.x,
+                            targetY: jet.y,
+                            speed: 4,
+                            progress: 0,
+                            fromSoldier: true,
+                            damage: soldier.damage
+                        });
+                    }
+                }
+            });
+            
+            // تحديث الانفجارات
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                explosions[i].radius += 2;
+                if (explosions[i].radius >= explosions[i].maxRadius) {
+                    explosions.splice(i, 1);
+                }
+            }
+            
+            updateInfoPanel();
         }
 
         function explodeMissile(missile) {
             const explosionX = missile.x + (missile.targetX - missile.x) * missile.progress;
             const explosionY = missile.y + (missile.targetY - missile.y) * missile.progress;
             
+            // إضافة تأثير الانفجار
+            explosions.push({
+                x: explosionX,
+                y: explosionY,
+                radius: 0,
+                maxRadius: 50,
+                color: '#ff6b00'
+            });
+            
             // ضرر على الأعداء في المدى
             const explosionRadius = 80;
+            const damage = missile.fromSoldier ? missile.damage : 50;
+            
+            // ضرر على الطائرة إذا كانت من جندي
+            if (missile.fromSoldier && jet) {
+                const distanceToJet = Math.sqrt(
+                    (jet.x - explosionX) ** 2 + 
+                    (jet.y - explosionY) ** 2
+                );
+                
+                if (distanceToJet < explosionRadius) {
+                    // يمكن إضافة نظام صحة للطائرة هنا
+                }
+            }
+            
+            // ضرر على الأعداء
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
                 const distance = Math.sqrt(
@@ -244,9 +410,25 @@
                 );
                 
                 if (distance < explosionRadius) {
-                    enemy.health -= 50;
+                    enemy.health -= damage;
                     if (enemy.health <= 0) {
                         enemies.splice(i, 1);
+                    }
+                }
+            }
+            
+            // ضرر على الجنود
+            for (let i = soldiers.length - 1; i >= 0; i--) {
+                const soldier = soldiers[i];
+                const distance = Math.sqrt(
+                    (soldier.x - explosionX) ** 2 + 
+                    (soldier.y - explosionY) ** 2
+                );
+                
+                if (distance < explosionRadius && !missile.fromSoldier) {
+                    soldier.health -= damage;
+                    if (soldier.health <= 0) {
+                        soldiers.splice(i, 1);
                     }
                 }
             }
@@ -261,16 +443,50 @@
             ctx.fillStyle = '#8B4513';
             ctx.fillRect(0, 450, canvas.width, canvas.height - 450);
             
+            // رسم العشب
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(0, 450, canvas.width, 10);
+            
             // رسم الأعداء
             enemies.forEach(enemy => {
                 ctx.fillStyle = enemy.color;
-                ctx.fillRect(enemy.x - 15, enemy.y - 15, 30, 30);
+                ctx.fillRect(enemy.x - enemy.width/2, enemy.y - enemy.height/2, enemy.width, enemy.height);
+                
+                // برج الدبابة
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(enemy.x - 5, enemy.y - enemy.height/2 - 10, 10, 10);
+                
+                // مدفع الدبابة
+                ctx.fillStyle = '#34495e';
+                ctx.fillRect(enemy.x, enemy.y - enemy.height/2 - 5, 20, 5);
                 
                 // شريط الصحة
                 ctx.fillStyle = '#e74c3c';
-                ctx.fillRect(enemy.x - 15, enemy.y - 25, 30, 4);
+                ctx.fillRect(enemy.x - enemy.width/2, enemy.y - enemy.height/2 - 15, enemy.width, 4);
                 ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(enemy.x - 15, enemy.y - 25, 30 * (enemy.health / 100), 4);
+                ctx.fillRect(enemy.x - enemy.width/2, enemy.y - enemy.height/2 - 15, enemy.width * (enemy.health / enemy.maxHealth), 4);
+            });
+            
+            // رسم الجنود
+            soldiers.forEach(soldier => {
+                ctx.fillStyle = soldier.color;
+                ctx.fillRect(soldier.x - soldier.width/2, soldier.y - soldier.height/2, soldier.width, soldier.height);
+                
+                // رأس الجندي
+                ctx.fillStyle = '#d35400';
+                ctx.fillRect(soldier.x - 5, soldier.y - soldier.height/2 - 5, 10, 5);
+                
+                // اسم السلاح
+                ctx.fillStyle = 'white';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(soldier.name, soldier.x, soldier.y + 20);
+                
+                // شريط الصحة
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(soldier.x - soldier.width/2, soldier.y - soldier.height/2 - 10, soldier.width, 3);
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(soldier.x - soldier.width/2, soldier.y - soldier.height/2 - 10, soldier.width * (soldier.health / soldier.maxHealth), 3);
             });
             
             // رسم الطائرة
@@ -282,36 +498,80 @@
             missiles.forEach(missile => {
                 drawMissile(missile);
             });
+            
+            // رسم الانفجارات
+            drawExplosions();
         }
 
         function drawJet() {
-            ctx.fillStyle = jet.color;
+            ctx.save();
+            ctx.translate(jet.x, jet.y);
+            
+            // حساب الزاوية حسب اتجاه الحركة
+            const dx = jet.targetX - jet.x;
+            const dy = jet.targetY - jet.y;
+            const angle = Math.atan2(dy, dx);
+            ctx.rotate(angle);
             
             // جسم الطائرة
-            ctx.fillRect(jet.x - 30, jet.y - 10, 60, 20);
+            ctx.fillStyle = jet.color;
+            ctx.fillRect(-30, -10, 60, 20);
             
             // الأجنحة
-            ctx.fillRect(jet.x - 15, jet.y - 20, 30, 10);
-            ctx.fillRect(jet.x - 15, jet.y + 10, 30, 10);
+            ctx.fillRect(-15, -20, 30, 10);
+            ctx.fillRect(-15, 10, 30, 10);
             
             // الذيل
-            ctx.fillRect(jet.x + 20, jet.y - 5, 15, 10);
+            ctx.fillRect(20, -5, 15, 10);
             
             // قمرة القيادة
             ctx.fillStyle = '#87CEEB';
-            ctx.fillRect(jet.x - 10, jet.y - 8, 15, 8);
+            ctx.fillRect(-10, -8, 15, 8);
+            
+            // محركات
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(-25, -5, 5, 10);
+            ctx.fillRect(-25, -8, 5, 16);
+            
+            ctx.restore();
         }
 
         function drawMissile(missile) {
             const x = missile.x + (missile.targetX - missile.x) * missile.progress;
             const y = missile.y + (missile.targetY - missile.y) * missile.progress;
             
-            ctx.fillStyle = '#ff0000';
+            ctx.fillStyle = missile.fromSoldier ? '#9b59b6' : '#ff0000';
             ctx.fillRect(x - 3, y - 2, 10, 4);
             
             // توهج الصاروخ
-            ctx.fillStyle = '#ff6b00';
+            ctx.fillStyle = missile.fromSoldier ? '#8e44ad' : '#ff6b00';
             ctx.fillRect(x - 5, y - 1, 4, 2);
+        }
+
+        function drawExplosions() {
+            explosions.forEach(explosion => {
+                ctx.fillStyle = explosion.color;
+                ctx.globalAlpha = 1 - (explosion.radius / explosion.maxRadius);
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, explosion.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // دائرة خارجية للانفجار
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.5 - (explosion.radius / explosion.maxRadius);
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, explosion.radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function updateInfoPanel() {
+            document.getElementById('missileCount').textContent = missiles.length;
+            document.getElementById('enemyCount').textContent = enemies.length;
+            document.getElementById('soldierCount').textContent = soldiers.length;
         }
 
         function gameLoop() {
