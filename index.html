@@ -231,17 +231,35 @@
             z-index: 100;
             backdrop-filter: blur(5px);
         }
+        
+        #moveModePanel {
+            position: absolute;
+            bottom: 150px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+        
+        .movement-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 6;
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <div id="startScreen">
             <div class="mainTitle">War Lords</div>
-            <div class="subTitle">معركة الجوية - الإصدار 3.0</div>
+            <div class="subTitle">معركة الجوية - الإصدار 4.0</div>
             <button class="startButton" onclick="startGame()">ابدأ اللعبة</button>
             <button class="startButton" onclick="showWhatsNew()">What's New!</button>
             <div class="controls-info">
-                انقر على الطائرة ثم انقر على الهدف للهجوم | المسافة لإطلاق الصواريخ الحرة
+                انقر على الطائرة ثم اختر: انقر على الهدف للهجوم | انقر على مكان للتحليق إليه
             </div>
         </div>
         
@@ -258,7 +276,15 @@
         <div id="attackModePanel">
             <div style="color: #e74c3c; margin-bottom: 5px;">وضع الهجوم النشط</div>
             <div>انقر على أي هدف للهجوم</div>
-            <button onclick="cancelAttackMode()">إلغاء الهجوم</button>
+            <button onclick="activateMoveMode()">التحول لوضع التحليق</button>
+            <button onclick="cancelAttackMode()">إلغاء</button>
+        </div>
+        
+        <div id="moveModePanel">
+            <div style="color: #2ecc71; margin-bottom: 5px;">وضع التحليق النشط</div>
+            <div>انقر على أي مكان للتحليق إليه</div>
+            <button onclick="activateAttackMode()">التحول لوضع الهجوم</button>
+            <button onclick="cancelMoveMode()">إلغاء</button>
         </div>
         
         <div id="infoPanel">
@@ -269,15 +295,15 @@
         </div>
         
         <div id="whatsNewPanel">
-            <h2>What's New! - الإصدار 3.0</h2>
+            <h2>What's New! - الإصدار 4.0</h2>
             <ul>
                 <li>🎯 نظام هجوم عن بعد للطائرة - انقر على الهدف من أي مكان!</li>
+                <li>✈️ نظام تحليق محسن - انقر على أي مكان لتوجه الطائرة إليه</li>
+                <li>🔄 وضعان منفصلان: الهجوم والتحليق</li>
+                <li>📡 خطوط حركة مرئية توضح مسار الطائرة</li>
                 <li>🚀 صواريخ ذكية تتبع الأهداف تلقائياً</li>
-                <li>🎮 تحكم محسن - انقر على الطائرة ثم انقر على الهدف</li>
-                <li>📡 خطوط هجوم مرئية توضح مسار الصواريخ</li>
-                <li>⚡ وضع هجوم خاص يظهر عند اختيار الطائرة</li>
-                <li>🎯 دقة إصابة محسنة للصواريخ</li>
-                <li>🔊 إشعارات تفاعلية جديدة</li>
+                <li>🎮 تحكم محسن - تحويل سهل بين وضعي الهجوم والتحليق</li>
+                <li>⚡ واجهة مستخدم محسنة مع أزرار تحكم إضافية</li>
             </ul>
             <button class="closeButton" onclick="closeWhatsNew()">إغلاق</button>
         </div>
@@ -301,7 +327,9 @@
         let dragOffsetY = 0;
         let selectionBox = null;
         let attackMode = false;
+        let moveMode = false;
         let attackLines = [];
+        let movementLines = [];
 
         function startGame() {
             document.getElementById('startScreen').style.display = 'none';
@@ -368,9 +396,10 @@
                 name: 'طائرة نفاثة',
                 health: 100,
                 maxHealth: 100,
-                attackRange: 800, // مدى هجوم كبير
+                attackRange: 800,
                 attackDamage: 75,
-                attackCooldown: 0
+                attackCooldown: 0,
+                isMoving: false
             };
             
             createTargetCircle();
@@ -475,6 +504,12 @@
                 }
             }
             
+            if (moveMode && jet) {
+                // في وضع التحليق، حرك الطائرة للموقع المحدد
+                moveJetTo(x, y);
+                return;
+            }
+            
             // البحث عن وحدة تم النقر عليها
             let clickedUnit = null;
             
@@ -508,15 +543,15 @@
                 selectUnit(clickedUnit);
                 showNotification(`✓ تم اختيار ${clickedUnit.name}`);
                 
-                // إذا كانت الطائرة، تفعيل وضع الهجوم
+                // إذا كانت الطائرة، تفعيل وضع الهجوم افتراضياً
                 if (clickedUnit.type === 'jet') {
                     activateAttackMode();
                 } else {
-                    deactivateAttackMode();
+                    deactivateAllModes();
                 }
             } else {
                 deselectUnit();
-                deactivateAttackMode();
+                deactivateAllModes();
             }
         }
 
@@ -536,6 +571,52 @@
             }
             
             return null;
+        }
+
+        function moveJetTo(x, y) {
+            if (!jet) return;
+            
+            jet.targetX = x;
+            jet.targetY = y;
+            jet.isMoving = true;
+            
+            // إضافة خط الحركة
+            addMovementLine(jet, {x: x, y: y});
+            
+            showNotification(`✈️ الطائرة تتجه إلى الموقع المحدد`);
+            
+            // إلغاء وضع التحليق بعد تحديد الوجهة
+            deactivateMoveMode();
+            deselectUnit();
+        }
+
+        function addMovementLine(fromUnit, toPos) {
+            const line = document.createElement('div');
+            line.className = 'movement-line';
+            line.style.left = fromUnit.x + 'px';
+            line.style.top = fromUnit.y + 'px';
+            line.style.width = '2px';
+            line.style.height = Math.sqrt(
+                (toPos.x - fromUnit.x) ** 2 + 
+                (toPos.y - fromUnit.y) ** 2
+            ) + 'px';
+            line.style.transform = `rotate(${Math.atan2(toPos.y - fromUnit.y, toPos.x - fromUnit.x)}rad)`;
+            line.style.transformOrigin = '0 0';
+            line.style.background = 'linear-gradient(to right, #3498db, #2ecc71)';
+            document.getElementById('gameContainer').appendChild(line);
+            
+            movementLines.push(line);
+            
+            // إزالة الخط بعد ثانيتين
+            setTimeout(() => {
+                if (line.parentNode) {
+                    line.parentNode.removeChild(line);
+                }
+                const index = movementLines.indexOf(line);
+                if (index > -1) {
+                    movementLines.splice(index, 1);
+                }
+            }, 2000);
         }
 
         function launchTargetedAttack(target) {
@@ -610,8 +691,18 @@
 
         function activateAttackMode() {
             attackMode = true;
+            moveMode = false;
             document.getElementById('attackModePanel').style.display = 'block';
+            document.getElementById('moveModePanel').style.display = 'none';
             showNotification('🎯 وضع الهجوم نشط - انقر على أي هدف للهجوم!');
+        }
+
+        function activateMoveMode() {
+            moveMode = true;
+            attackMode = false;
+            document.getElementById('moveModePanel').style.display = 'block';
+            document.getElementById('attackModePanel').style.display = 'none';
+            showNotification('✈️ وضع التحليق نشط - انقر على أي مكان للتحليق إليه!');
         }
 
         function deactivateAttackMode() {
@@ -619,9 +710,24 @@
             document.getElementById('attackModePanel').style.display = 'none';
         }
 
+        function deactivateMoveMode() {
+            moveMode = false;
+            document.getElementById('moveModePanel').style.display = 'none';
+        }
+
+        function deactivateAllModes() {
+            deactivateAttackMode();
+            deactivateMoveMode();
+        }
+
         function cancelAttackMode() {
             deactivateAttackMode();
             showNotification('تم إلغاء وضع الهجوم');
+        }
+
+        function cancelMoveMode() {
+            deactivateMoveMode();
+            showNotification('تم إلغاء وضع التحليق');
         }
 
         function fireFreeMissile() {
@@ -747,6 +853,9 @@
                 if (distance > 5) {
                     jet.x += (dx / distance) * jet.speed;
                     jet.y += (dy / distance) * jet.speed;
+                    jet.isMoving = true;
+                } else {
+                    jet.isMoving = false;
                 }
                 
                 // تحديث تأخير الهجوم
@@ -1103,9 +1212,9 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // تحريك الطائرة بالفأرة
+        // تحريك الطائرة بالفأرة (فقط عندما لا تكون في وضع هجوم أو تحليق)
         canvas.addEventListener('mousemove', (e) => {
-            if (jet && !isDragging && !attackMode) {
+            if (jet && !isDragging && !attackMode && !moveMode) {
                 jet.targetX = e.clientX;
                 jet.targetY = e.clientY;
             }
